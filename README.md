@@ -8,6 +8,14 @@
 
 ---
 
+## 🎬 Demo
+
+[![Watch the demo](https://img.youtube.com/vi/9Vf_PvScjWI/maxresdefault.jpg)](https://www.youtube.com/watch?v=9Vf_PvScjWI)
+
+*Click to watch how the TSQL.APP skills work in action*
+
+---
+
 ## 🎯 What is TSQL.APP?
 
 [TSQL.APP](https://tsql.app) is a revolutionary **metadata-driven application framework** where everything is defined in database tables, not code.
