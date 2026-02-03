@@ -1,0 +1,482 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  TSQL.APP Complete Reference - PART 2
+  CORE FRAMEWORK PROCEDURES
+  
+  Essential procedures for TSQL.APP development.
+  For complete parameter details, query the project database.
+-->
+<tsqlapp-core-procedures version="2.0">
+
+  <documentation-reference>
+    For complete parameter signatures:
+    - Query project database using tsql-schema tool
+    - Check tsql.app_procs-common.csv
+    - Use sp_help 'procedure_name' in SQL Server
+  </documentation-reference>
+
+  <!-- MODAL UI COMPONENTS -->
+  <category name="modal-ui">
+    
+    <procedure name="sp_api_modal_text">
+      <purpose>Display text with styling</purpose>
+      <essential-params>
+        <param name="@text" required="true">Text to display</param>
+        <param name="@class">CSS classes (h1-h5, alert alert-*, text-*, code)</param>
+        <param name="@markdown">Parse as markdown (0/1)</param>
+        <param name="@print">Include in print (0/1)</param>
+      </essential-params>
+      <example>
+        <![CDATA[
+DECLARE @Title NVARCHAR(MAX) = N'Report';
+EXEC sp_api_modal_text @text = @Title, @class = N'h2';
+
+DECLARE @Msg NVARCHAR(MAX) = N'Success!';
+EXEC sp_api_modal_text @text = @Msg, @class = N'alert alert-success';
+        ]]>
+      </example>
+    </procedure>
+
+    <procedure name="sp_api_modal_input">
+      <purpose>Text input field</purpose>
+      <essential-params>
+        <param name="@name" required="true">Variable name (must match exactly)</param>
+        <param name="@value OUT" required="true">Input value</param>
+        <param name="@type">text, textarea, number, hidden</param>
+        <param name="@placeholder">Placeholder text</param>
+        <param name="@focus">Auto-focus (0/1)</param>
+        <param name="@max">Max characters</param>
+        <param name="@rows">Rows for textarea</param>
+      </essential-params>
+      <example>
+        <![CDATA[
+DECLARE @UserName NVARCHAR(MAX);
+EXEC sp_api_modal_input 
+    @name = N'@UserName',
+    @value = @UserName OUT,
+    @placeholder = N'Enter name',
+    @focus = 1;
+        ]]>
+      </example>
+    </procedure>
+
+    <procedure name="sp_api_modal_button">
+      <purpose>Clickable button</purpose>
+      <essential-params>
+        <param name="@name">Variable name</param>
+        <param name="@value" required="true">Button label</param>
+        <param name="@valueout OUT">Captures click</param>
+        <param name="@class">btn-primary/success/danger/warning/secondary/info</param>
+        <param name="@key">Keyboard shortcut (Enter, Escape)</param>
+        <param name="@inline">Inline display (default 1)</param>
+      </essential-params>
+      <example>
+        <![CDATA[
+DECLARE @SaveBtn NVARCHAR(MAX);
+EXEC sp_api_modal_button 
+    @name = N'@SaveBtn',
+    @value = N'Save',
+    @valueout = @SaveBtn OUT,
+    @class = N'btn-primary',
+    @key = N'Enter';
+        ]]>
+      </example>
+    </procedure>
+
+    <procedure name="sp_api_modal_table">
+      <purpose>Display formatted table with grouping/totaling</purpose>
+      <essential-params>
+        <param name="@tmptable">Temp table name (e.g., '#Results')</param>
+        <param name="@orderby">ORDER BY clause</param>
+        <param name="@print">Include in print (0/1)</param>
+        <param name="@excel">Excel export button (0/1)</param>
+      </essential-params>
+      <column-suffixes>
+        <suffix name="*">Enable grouping</suffix>
+        <suffix name="@">Enable totaling</suffix>
+        <suffix name=":n">Round to n decimals</suffix>
+        <suffix name="~classname">Apply CSS styling</suffix>
+        <note>Combine: [Amount@:2~text-success]</note>
+      </column-suffixes>
+      <example>
+        <![CDATA[
+SELECT 
+    [Dept*] = DeptName,
+    [Amount@:2~text-success] = Total
+INTO #Report
+FROM Data;
+
+EXEC sp_api_modal_table 
+    @tmptable = N'#Report',
+    @print = 1,
+    @excel = 1;
+        ]]>
+      </example>
+    </procedure>
+
+    <procedure name="sp_api_modal_get_value">
+      <purpose>Retrieve value from client state (state sync)</purpose>
+      <critical>Call BEFORE drawing UI components</critical>
+      <essential-params>
+        <param name="@name" required="true">Variable name</param>
+        <param name="@value OUT" required="true">Retrieved value</param>
+      </essential-params>
+      <example>
+        <![CDATA[
+DECLARE @Input NVARCHAR(MAX);
+DECLARE @Btn NVARCHAR(MAX);
+
+-- Sync BEFORE UI
+EXEC sp_api_modal_get_value @name = N'@Input', @value = @Input OUT;
+EXEC sp_api_modal_get_value @name = N'@Btn', @value = @Btn OUT;
+
+-- Now draw UI
+EXEC sp_api_modal_input @name = N'@Input', @value = @Input OUT;
+EXEC sp_api_modal_button @name = N'@Btn', @value = N'OK', @valueout = @Btn OUT;
+        ]]>
+      </example>
+    </procedure>
+
+    <procedure name="sp_api_modal_value">
+      <purpose>Set or clear value in client state</purpose>
+      <essential-params>
+        <param name="@name" required="true">Variable name</param>
+        <param name="@value">Value to set (NULL to clear)</param>
+      </essential-params>
+      <example>
+        <![CDATA[
+-- Reset button after validation error
+EXEC sp_api_modal_value @name = N'@SubmitBtn', @value = NULL;
+        ]]>
+      </example>
+    </procedure>
+
+    <procedure name="sp_api_modal_clear">
+      <purpose>Close modal and return to card</purpose>
+      <no-parameters>true</no-parameters>
+      <example>
+        <![CDATA[
+DECLARE @Msg NVARCHAR(MAX) = N'Saved!';
+EXEC sp_api_toast @text = @Msg, @class = N'btn-success';
+EXEC sp_api_modal_clear;
+        ]]>
+      </example>
+    </procedure>
+
+    <procedure name="sp_api_toast">
+      <purpose>Show temporary notification</purpose>
+      <essential-params>
+        <param name="@text" required="true">Message text</param>
+        <param name="@class">btn-success/info/warning/danger</param>
+      </essential-params>
+      <example>
+        <![CDATA[
+DECLARE @Msg NVARCHAR(MAX) = N'Saved successfully!';
+EXEC sp_api_toast @text = @Msg, @class = N'btn-success';
+        ]]>
+      </example>
+    </procedure>
+
+    <procedure name="sp_api_modal_restart">
+      <purpose>Restart modal with new state (multi-step forms)</purpose>
+      <essential-params>
+        <param name="@values">JSON state object</param>
+        <param name="@action_name">Optional: different action to run</param>
+      </essential-params>
+      <note>For multi-step forms only. Simple forms use automatic state management.</note>
+      <example>
+        <![CDATA[
+DECLARE @JsonState NVARCHAR(MAX);
+SET @JsonState = (
+    SELECT [@Step] = 2, [@Name] = @UserName
+    FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
+);
+EXEC sp_api_modal_restart @values = @JsonState;
+        ]]>
+      </example>
+    </procedure>
+
+  </category>
+
+  <!-- NAVIGATION AND WORKFLOW -->
+  <category name="navigation">
+    
+    <procedure name="sp_api_goto">
+      <purpose>Navigate to different card/path</purpose>
+      <essential-params>
+        <param name="@path">Destination path (e.g., '/customers/123')</param>
+        <param name="@search">Query string (e.g., '?id=123&ord=456')</param>
+        <param name="@referer_path">Path to return to</param>
+        <param name="@referer_search">Query params for referrer</param>
+      </essential-params>
+      <example>
+        <![CDATA[
+DECLARE @Path NVARCHAR(MAX);
+SET @Path = CONCAT('/customers/', @CustomerId);
+
+DECLARE @Msg NVARCHAR(MAX) = N'Navigating...';
+EXEC sp_api_toast @text = @Msg, @class = N'btn-info';
+EXEC sp_api_goto @path = @Path;
+        ]]>
+      </example>
+    </procedure>
+
+    <procedure name="sp_api_go2">
+      <purpose>Navigate back or to list view</purpose>
+      <essential-params>
+        <param name="@steps_back">Number of steps to go back</param>
+        <param name="@to_list">Navigate to list view (0/1)</param>
+      </essential-params>
+      <example>
+        <![CDATA[
+-- Go back one step
+EXEC sp_api_go2 @steps_back = 1;
+
+-- Go to list view
+EXEC sp_api_go2 @to_list = 1;
+        ]]>
+      </example>
+    </procedure>
+
+  </category>
+
+  <!-- DATA AND FILE OPERATIONS -->
+  <category name="data-operations">
+    
+    <procedure name="sp_api_excel">
+      <purpose>Export data to Excel</purpose>
+      <essential-params>
+        <param name="@sql">SQL query for data</param>
+        <param name="@filename">Output filename</param>
+        <param name="@sheetname">Sheet name</param>
+        <param name="@stay_in_modal">Keep modal open after export (0/1)</param>
+      </essential-params>
+      <example>
+        <![CDATA[
+DECLARE @SQL NVARCHAR(MAX);
+SET @SQL = N'SELECT * FROM #Results';
+
+DECLARE @Filename NVARCHAR(MAX) = N'Report';
+EXEC sp_api_excel 
+    @sql = @SQL, 
+    @filename = @Filename,
+    @stay_in_modal = 1;
+        ]]>
+      </example>
+    </procedure>
+
+    <procedure name="sp_api_excel_read">
+      <purpose>Read Excel file contents</purpose>
+      <essential-params>
+        <param name="@api_files_id">File ID from api_files table</param>
+        <param name="@json OUT">JSON representation of Excel data</param>
+      </essential-params>
+      <example>
+        <![CDATA[
+DECLARE @FileId INT;
+DECLARE @Json NVARCHAR(MAX);
+
+-- After file upload, read contents
+EXEC sp_api_excel_read 
+    @api_files_id = @FileId, 
+    @json = @Json OUT;
+        ]]>
+      </example>
+    </procedure>
+
+    <procedure name="sp_api_modal_file_multi">
+      <purpose>File upload interface</purpose>
+      <essential-params>
+        <param name="@name">Variable name</param>
+        <param name="@to_file_context">Card context</param>
+        <param name="@to_file_context_id">Record ID</param>
+        <param name="@category">File category</param>
+        <param name="@api_files_id OUT">Uploaded file ID</param>
+      </essential-params>
+      <example>
+        <![CDATA[
+DECLARE @FileId INT;
+
+EXEC sp_api_modal_file_multi 
+    @name = N'file1',
+    @to_file_context = @card_name,
+    @to_file_context_id = @id,
+    @category = N'documents',
+    @api_files_id = @FileId OUT;
+
+IF @FileId IS NULL RETURN;
+        ]]>
+      </example>
+    </procedure>
+
+  </category>
+
+  <!-- EMAIL AND COMMUNICATION -->
+  <category name="communication">
+    
+    <procedure name="sp_api_email">
+      <purpose>Send email with attachments</purpose>
+      <essential-params>
+        <param name="@to" required="true">Semicolon-separated email addresses</param>
+        <param name="@subject" required="true">Email subject</param>
+        <param name="@body">Plain text body</param>
+        <param name="@html">HTML body</param>
+        <param name="@cc">CC recipients</param>
+        <param name="@bcc">BCC recipients</param>
+        <param name="@attachments">JSON array of attachments</param>
+        <param name="@api_files_ids">Comma-separated file IDs</param>
+      </essential-params>
+      <note>In test environments, emails redirect to current user</note>
+      <example>
+        <![CDATA[
+DECLARE @To NVARCHAR(MAX) = N'user@example.com';
+DECLARE @Subject NVARCHAR(MAX) = N'Report Ready';
+DECLARE @Html NVARCHAR(MAX) = N'<h1>Your report is ready!</h1>';
+
+EXEC sp_api_email 
+    @to = @To,
+    @subject = @Subject,
+    @html = @Html;
+        ]]>
+      </example>
+    </procedure>
+
+  </category>
+
+  <!-- TASK MANAGEMENT -->
+  <category name="task-management">
+    
+    <procedure name="sp_api_add_sql_task">
+      <purpose>Schedule background SQL task</purpose>
+      <essential-params>
+        <param name="@sql" required="true">SQL to execute</param>
+        <param name="@seconds">Delay in seconds before execution</param>
+        <param name="@description">Task description</param>
+        <param name="@repeat_task_in_seconds">Repeat interval</param>
+        <param name="@async">Execute asynchronously (0/1)</param>
+        <param name="@timeout_ms">Timeout in milliseconds</param>
+        <param name="@priority">Priority (higher = first)</param>
+        <param name="@task_id OUT">Created task ID</param>
+      </essential-params>
+      <example>
+        <![CDATA[
+DECLARE @SQL NVARCHAR(MAX);
+SET @SQL = N'UPDATE Statistics SET LastRun = GETDATE()';
+
+DECLARE @TaskId INT;
+EXEC sp_api_add_sql_task 
+    @sql = @SQL,
+    @seconds = 60,
+    @description = N'Update stats',
+    @task_id = @TaskId OUT;
+        ]]>
+      </example>
+    </procedure>
+
+  </category>
+
+  <!-- ADDITIONAL MODAL COMPONENTS -->
+  <category name="additional-modal-components">
+    
+    <procedure name="sp_api_modal_select">
+      <purpose>Dropdown selection list</purpose>
+      <essential-params>
+        <param name="@name">Variable name</param>
+        <param name="@value OUT">Selected value</param>
+        <param name="@tmptable">Temp table with options</param>
+      </essential-params>
+      <note>Query database for complete parameter list</note>
+    </procedure>
+
+    <procedure name="sp_api_modal_date">
+      <purpose>Date picker</purpose>
+      <essential-params>
+        <param name="@name">Variable name</param>
+        <param name="@value OUT">Selected date</param>
+      </essential-params>
+      <note>Query database for complete parameter list</note>
+    </procedure>
+
+    <procedure name="sp_api_modal_datetime">
+      <purpose>Date and time picker</purpose>
+      <essential-params>
+        <param name="@name">Variable name</param>
+        <param name="@value OUT">Selected datetime</param>
+      </essential-params>
+      <note>Query database for complete parameter list</note>
+    </procedure>
+
+    <procedure name="sp_api_modal_switch">
+      <purpose>Toggle switch (boolean)</purpose>
+      <essential-params>
+        <param name="@name">Variable name</param>
+        <param name="@value OUT">Switch state (0/1)</param>
+      </essential-params>
+      <note>Query database for complete parameter list</note>
+    </procedure>
+
+    <procedure name="sp_api_modal_html">
+      <purpose>Display raw HTML content</purpose>
+      <essential-params>
+        <param name="@html" required="true">HTML content</param>
+      </essential-params>
+      <note>Query database for complete parameter list</note>
+    </procedure>
+
+  </category>
+
+  <!-- UTILITY PROCEDURES -->
+  <category name="utilities">
+    
+    <procedure name="sp_api_card_actions_execute">
+      <purpose>Execute a card action by name or ID</purpose>
+      <essential-params>
+        <param name="@card_id">Card ID</param>
+        <param name="@action_name">Action name to execute</param>
+        <param name="@id">Action ID</param>
+      </essential-params>
+      <example>
+        <![CDATA[
+-- Execute by name
+EXEC sp_api_card_actions_execute 
+    @card_id = @card_id, 
+    @action_name = N'PrintReport';
+        ]]>
+      </example>
+    </procedure>
+
+    <procedure name="sp_api_foreach_id">
+      <purpose>Execute SQL for each selected record</purpose>
+      <essential-params>
+        <param name="@sql">SQL template with {id} placeholder</param>
+        <param name="@ids">Comma-separated IDs (uses @ids if not provided)</param>
+      </essential-params>
+      <note>Query database for complete parameter list</note>
+    </procedure>
+
+  </category>
+
+  <!-- PROCEDURE DISCOVERY -->
+  <procedure-discovery>
+    <how-to-find-procedures>
+      <method name="tsql-schema-tool">
+        Use the tsql-schema tool functions to search and discover procedures:
+        - search_schema: Find procedures by name pattern
+        - get_procedure_details: Get complete parameter information
+        - list_objects_by_type: List all procedures
+      </method>
+      <method name="csv-files">
+        Check the CSV documentation files:
+        - tsql.app_procs-common.csv: Most frequently used procedures
+        - tsql.app_procs-all.csv: Complete procedure catalog with parameters
+      </method>
+      <method name="sql-server">
+        Query directly in SQL Server:
+        - sp_help 'procedure_name': Full parameter details
+        - SELECT * FROM sys.procedures: List all procedures
+        - sys.parameters: Parameter details for any procedure
+      </method>
+    </how-to-find-procedures>
+  </procedure-discovery>
+
+</tsqlapp-core-procedures>

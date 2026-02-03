@@ -1,0 +1,422 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  TSQL.APP Complete Reference - PART 1
+  CRITICAL MANDATED PRACTICES
+  
+  These rules MUST be followed without exception in all TSQL.APP code.
+  Violations will cause script failures or unpredictable behavior.
+-->
+<tsqlapp-mandated-practices version="2.0">
+
+  <rule id="1" category="object-access" severity="critical">
+    <name>ALWAYS Use sys.objects for Object Existence</name>
+    <description>
+      TSQL.APP combines objects from multiple databases. A single entity may be 
+      a table, synonym, or view. Only sys.objects provides complete coverage.
+    </description>
+    <rationale>
+      In TSQL.APP's two-database architecture, objects can exist as:
+      - Direct tables in project database
+      - Synonyms pointing to source database tables
+      - Views in project database
+      - Synonyms pointing to source database views
+      Checking specific object types will miss other valid implementations.
+    </rationale>
+    <correct>
+      <![CDATA[
+IF EXISTS (
+    SELECT 1 FROM sys.objects 
+    WHERE name = 'TableName' 
+    AND type IN ('U', 'SN', 'V')
+)
+BEGIN
+    -- Object exists in some valid form
+END
+      ]]>
+    </correct>
+    <incorrect>
+      <![CDATA[
+-- NEVER check specific object types
+IF EXISTS (SELECT 1 FROM sys.tables WHERE name = 'TableName')
+IF EXISTS (SELECT 1 FROM sys.synonyms WHERE name = 'TableName')
+IF EXISTS (SELECT 1 FROM sys.views WHERE name = 'TableName')
+      ]]>
+    </incorrect>
+  </rule>
+
+  <rule id="2" category="variables" severity="critical">
+    <name>ALL Variables MUST Be Declared at Script Start</name>
+    <description>
+      Every variable must be declared at the very beginning of the script.
+      No late declarations. No exceptions.
+    </description>
+    <requirements>
+      <item>Use NVARCHAR(MAX) for text variables</item>
+      <item>Always use N prefix for string literals</item>
+      <item>Group related variables together</item>
+      <item>Use clear, descriptive names</item>
+      <item>Separate UI control variables from business logic variables</item>
+    </requirements>
+    <correct>
+      <![CDATA[
+-- ALL variables at top
+-- UI Control Variables
+DECLARE @UserInput NVARCHAR(MAX);
+DECLARE @SubmitButton NVARCHAR(MAX);
+
+-- Business Logic Variables
+DECLARE @Message NVARCHAR(MAX);
+DECLARE @RecordCount INT;
+
+-- Then logic follows
+SET @Message = N'Hello';
+      ]]>
+    </correct>
+    <incorrect>
+      <![CDATA[
+-- Logic first - WRONG!
+SET @Message = N'Hello';  -- ERROR: Variable not declared
+DECLARE @Message NVARCHAR(MAX);  -- Too late!
+      ]]>
+    </incorrect>
+  </rule>
+
+  <rule id="3" category="parameter-passing" severity="critical">
+    <name>NEVER Pass Calculations Directly to Stored Procedures</name>
+    <description>
+      Prepare all values in variables first. Never use expressions, 
+      concatenations, or functions directly in procedure parameters.
+    </description>
+    <requirements>
+      <item>Only pass @variables or fixed string literals to procedures</item>
+      <item>One operation per variable</item>
+      <item>Clean, traceable data flow</item>
+      <item>Prepare values BEFORE the EXEC statement</item>
+    </requirements>
+    <correct>
+      <![CDATA[
+-- Prepare value in variable first
+DECLARE @Message NVARCHAR(MAX);
+SET @Message = CONCAT(N'Hello ', @Name);
+EXEC sp_api_modal_text @text = @Message;
+
+-- Simple literals are OK
+EXEC sp_api_toast @text = N'Simple message', @class = N'btn-success';
+      ]]>
+    </correct>
+    <incorrect>
+      <![CDATA[
+-- NEVER do these - all cause syntax errors:
+EXEC sp_api_modal_text @text = CONCAT(N'Hello ', @Name);
+EXEC sp_api_modal_text @text = N'Hello ' + @Name;
+EXEC sp_api_toast @text = UPPER(@Message);
+EXEC sp_api_modal_text @text = '<div>' + @Content + '</div>';
+      ]]>
+    </incorrect>
+    <consequences>
+      These violations cause immediate syntax errors and script execution failure.
+      Error messages like "Incorrect syntax near..." will appear.
+    </consequences>
+  </rule>
+
+  <rule id="4" category="procedures" severity="critical">
+    <name>ONLY Use Documented Stored Procedures</name>
+    <description>
+      Never invent procedure names. Always verify procedures exist in the 
+      framework documentation before using them.
+    </description>
+    <verification-process>
+      <step>1. Check tsql.app_procs-common.csv for procedure name</step>
+      <step>2. Verify all parameters match documented signatures</step>
+      <step>3. Never assume parameter names or default values</step>
+      <step>4. If uncertain, query the database schema directly</step>
+    </verification-process>
+    <common-mistakes>
+      <mistake>
+        <invented>sp_api_modal_title</invented>
+        <correct>sp_api_modal_text @text=N'Title', @class=N'h3'</correct>
+        <explanation>No title procedure exists; use text with header class</explanation>
+      </mistake>
+      <mistake>
+        <invented>sp_api_modal_info</invented>
+        <correct>sp_api_modal_text @text=@Message, @class=N'alert alert-success'</correct>
+        <explanation>No info procedure exists; use text with alert class</explanation>
+      </mistake>
+      <mistake>
+        <invented>sp_api_modal_warning</invented>
+        <correct>sp_api_modal_text @text=@Message, @class=N'alert alert-warning'</correct>
+        <explanation>No warning procedure exists; use text with alert class</explanation>
+      </mistake>
+      <mistake>
+        <invented>sp_api_modal_error</invented>
+        <correct>sp_api_modal_text @text=@Message, @class=N'alert alert-danger'</correct>
+        <explanation>No error procedure exists; use text with alert class</explanation>
+      </mistake>
+      <mistake>
+        <invented>sp_api_modal_br</invented>
+        <correct>sp_api_modal_text @text=N''</correct>
+        <explanation>No line break procedure exists; use empty text</explanation>
+      </mistake>
+      <mistake>
+        <invented>sp_api_modal_header</invented>
+        <correct>sp_api_modal_text @text=N'Header', @class=N'h4'</correct>
+        <explanation>No header procedure exists; use text with h1-h5 classes</explanation>
+      </mistake>
+    </common-mistakes>
+  </rule>
+
+  <rule id="5" category="database-access" severity="critical">
+    <name>Use dbo.main_db() for Source Database References</name>
+    <description>
+      Never hardcode source database names. Use dbo.main_db() function for 
+      programmatic access to the source database.
+    </description>
+    <architecture-context>
+      TSQL.APP uses a two-database pattern:
+      - Project Database (e.g., "A_PROJ") - Contains framework and metadata
+      - Source Database (e.g., "A") - Contains business data
+      The dbo.main_db() function returns the source database name dynamically.
+    </architecture-context>
+    <correct>
+      <![CDATA[
+-- Get source database name dynamically
+DECLARE @SourceDB NVARCHAR(128) = dbo.main_db();
+DECLARE @SQL NVARCHAR(MAX);
+
+-- Use in dynamic SQL
+SET @SQL = CONCAT(
+    N'SELECT * FROM [', @SourceDB, N'].[dbo].[TableName]'
+);
+EXEC(@SQL);
+
+-- For parameterized queries
+SET @SQL = CONCAT(
+    N'SELECT @Count = COUNT(*) FROM [', @SourceDB, N'].[dbo].[TableName]'
+);
+EXEC sp_executesql @SQL, N'@Count INT OUTPUT', @Count = @RecordCount OUTPUT;
+      ]]>
+    </correct>
+    <incorrect>
+      <![CDATA[
+-- NEVER hardcode database name
+SELECT * FROM [app].[dbo].[TableName]
+SELECT * FROM [A].[dbo].[TableName]
+      ]]>
+    </incorrect>
+  </rule>
+
+  <rule id="6" category="modal-interaction" severity="critical">
+    <name>State Synchronization Pattern (Reactive Execution Model)</name>
+    <description>
+      TSQL.APP uses a reactive execution model where the entire script 
+      re-executes on every user interaction. Always synchronize state 
+      at the beginning before drawing any UI.
+    </description>
+    <reactive-model-explanation>
+      Unlike traditional web development, TSQL.APP scripts work as follows:
+      1. Initial run: Script executes, generates UI, waits for user input
+      2. User interaction: User clicks button or enters data
+      3. Re-execution: ENTIRE script runs again with user's input values
+      4. State sync: Framework synchronizes T-SQL variables with UI state
+      5. Cycle continues: Until script calls sp_api_modal_clear
+      
+      This eliminates complex state management while keeping all logic in T-SQL.
+    </reactive-model-explanation>
+    <pattern>
+      <![CDATA[
+-- STEP 1: Declare all variables
+DECLARE @UserInput NVARCHAR(MAX);
+DECLARE @SubmitButton NVARCHAR(MAX);
+
+-- STEP 2: Synchronize state (BEFORE any UI drawing)
+EXEC sp_api_modal_get_value @name=N'@UserInput', @value=@UserInput OUT;
+EXEC sp_api_modal_get_value @name=N'@SubmitButton', @value=@SubmitButton OUT;
+
+-- STEP 3: Draw UI components
+EXEC sp_api_modal_input @name=N'@UserInput', @value=@UserInput OUT;
+EXEC sp_api_modal_button @name=N'@SubmitButton', @value=N'Submit', @valueout=@SubmitButton OUT;
+
+-- STEP 4: Pause point (flow control)
+IF @SubmitButton IS NULL RETURN;
+
+-- STEP 5: Process action (only runs after button click)
+-- ... validation and processing
+      ]]>
+    </pattern>
+    <critical-points>
+      <item>@name parameter MUST exactly match T-SQL variable name</item>
+      <item>Always synchronize state BEFORE drawing UI components</item>
+      <item>Use IS NULL check for flow control (the "pause point")</item>
+      <item>Reset button state after validation errors to prevent loops</item>
+      <item>The script reruns completely on each interaction</item>
+    </critical-points>
+  </rule>
+
+  <rule id="7" category="modal-interaction" severity="high">
+    <name>Reset Button State After Validation Errors</name>
+    <description>
+      Always reset button state after validation failures to prevent 
+      infinite loops in the reactive execution model.
+    </description>
+    <why-this-matters>
+      In the reactive model, if a button has a value and validation fails,
+      the script will return but the button still has its value. On the next
+      execution cycle, the button will still be non-null, causing the same
+      validation to fail repeatedly - an infinite loop.
+    </why-this-matters>
+    <correct>
+      <![CDATA[
+IF @SubmitButton IS NOT NULL
+BEGIN
+    -- Perform validation
+    IF LEN(TRIM(ISNULL(@UserInput, N''))) < 2
+    BEGIN
+        DECLARE @ErrorMsg NVARCHAR(MAX);
+        SET @ErrorMsg = N'Input too short';
+        EXEC sp_api_toast @text=@ErrorMsg, @class=N'btn-warning';
+        
+        -- CRITICAL: Reset button state
+        EXEC sp_api_modal_value @name=N'@SubmitButton', @value=NULL;
+        RETURN;
+    END
+    
+    -- Validation passed - continue processing
+END
+      ]]>
+    </correct>
+    <incorrect>
+      <![CDATA[
+IF @SubmitButton IS NOT NULL
+BEGIN
+    IF LEN(TRIM(ISNULL(@UserInput, N''))) < 2
+    BEGIN
+        EXEC sp_api_toast @text=N'Input too short', @class=N'btn-warning';
+        RETURN;  -- BUG: Button state not reset, creates infinite loop!
+    END
+END
+      ]]>
+    </incorrect>
+  </rule>
+
+  <rule id="8" category="variables" severity="high">
+    <name>Never Redeclare TSQL.APP Context Variables</name>
+    <description>
+      TSQL.APP pre-declares context variables. Never create variables with these names.
+    </description>
+    <predeclared-variables>
+      <var name="@card_id" type="nvarchar(32)">ID of the current card</var>
+      <var name="@id" type="nvarchar(32)">ID of current record (form) or cursor (list)</var>
+      <var name="@ids" type="nvarchar(max)">Selected record IDs in listview</var>
+      <var name="@basetable" type="nvarchar(128)">Base table of the card</var>
+      <var name="@tablename" type="nvarchar(128)">Table or view name used by card</var>
+      <var name="@identity_column" type="nvarchar(1024)">Identity column</var>
+      <var name="@parent_card_id" type="nvarchar(32)">Parent card ID</var>
+      <var name="@parent_id" type="nvarchar(32)">Parent record ID</var>
+      <var name="@path" type="nvarchar(4000)">Current navigation path</var>
+      <var name="@previous_path" type="nvarchar(4000)">Previous path</var>
+      <var name="@is_new" type="nvarchar(32)">Indicates new record</var>
+      <var name="@user_id" type="nvarchar(32)">Logged-in user ID</var>
+      <var name="@is_form" type="nvarchar(32)">'1'=form mode, '0'=list mode</var>
+      <var name="@hostname" type="nvarchar(max)">API hostname</var>
+      <var name="@card_field_id" type="nvarchar(32)">Selected card field ID</var>
+      <var name="@card_name" type="nvarchar(128)">Current card name</var>
+      <var name="@parent_card_name" type="nvarchar(128)">Parent card name</var>
+      <var name="@user_name" type="nvarchar(256)">User email address</var>
+      <var name="@user" type="nvarchar(256)">User email (alias)</var>
+      <var name="@selected_field_name" type="nvarchar(128)">Selected field name</var>
+      <var name="@current_card_action_id" type="int">Current action ID</var>
+    </predeclared-variables>
+    <usage>Use these variables directly without declaring them.</usage>
+  </rule>
+
+  <rule id="9" category="temporary-tables" severity="critical">
+    <name>Define Temporary Tables Only Once</name>
+    <description>
+      T-SQL compiles the entire script before execution. Temporary tables 
+      cannot be conditionally created in different branches with different schemas.
+    </description>
+    <correct>
+      <![CDATA[
+-- Define once with comprehensive schema
+IF OBJECT_ID('tempdb..#Results') IS NOT NULL
+    DROP TABLE #Results;
+    
+CREATE TABLE #Results (
+    ID INT,
+    Value1 DECIMAL(10,2),
+    Value2 NVARCHAR(100)
+);
+
+-- Use conditional logic for population
+IF @Condition = 1
+    INSERT INTO #Results (ID, Value1) SELECT ...
+ELSE
+    INSERT INTO #Results (ID, Value2) SELECT ...
+      ]]>
+    </correct>
+    <incorrect>
+      <![CDATA[
+-- NEVER create in different branches
+IF @Condition = 1
+    CREATE TABLE #Results (ID INT, Value1 DECIMAL(10,2));
+ELSE
+    CREATE TABLE #Results (ID INT, Value2 NVARCHAR(100));  -- ERROR!
+      ]]>
+    </incorrect>
+  </rule>
+
+  <rule id="10" category="data-types" severity="high">
+    <name>Always Use Unicode (NVARCHAR, not VARCHAR)</name>
+    <description>
+      TSQL.APP is Unicode-compliant. Always use NVARCHAR and N prefix.
+    </description>
+    <requirements>
+      <item>Use NVARCHAR, never VARCHAR</item>
+      <item>Prefix ALL string literals with N</item>
+      <item>Use NVARCHAR(MAX) for long text</item>
+    </requirements>
+    <correct>
+      <![CDATA[
+DECLARE @Message NVARCHAR(MAX);
+SET @Message = N'Hello World';
+      ]]>
+    </correct>
+    <incorrect>
+      <![CDATA[
+DECLARE @Message VARCHAR(MAX);  -- WRONG
+SET @Message = 'Hello World';   -- Missing N
+      ]]>
+    </incorrect>
+  </rule>
+
+  <rule id="11" category="parameter-passing" severity="critical">
+    <name>Dedicated Output Variables for Each Control</name>
+    <description>
+      Never reuse the same variable for different UI control's OUT parameters.
+    </description>
+    <correct>
+      <![CDATA[
+DECLARE @FirstName NVARCHAR(MAX);
+DECLARE @LastName NVARCHAR(MAX);
+
+EXEC sp_api_modal_input 
+    @name = N'@FirstName', 
+    @value = @FirstName OUT;
+
+EXEC sp_api_modal_input 
+    @name = N'@LastName', 
+    @value = @LastName OUT;
+      ]]>
+    </correct>
+    <incorrect>
+      <![CDATA[
+-- WRONG: Reusing same variable
+DECLARE @p_value NVARCHAR(MAX);
+
+EXEC sp_api_modal_input @name = N'@FirstName', @value = @p_value OUT;
+EXEC sp_api_modal_input @name = N'@LastName', @value = @p_value OUT;  -- Overwrites!
+      ]]>
+    </incorrect>
+  </rule>
+
+</tsqlapp-mandated-practices>

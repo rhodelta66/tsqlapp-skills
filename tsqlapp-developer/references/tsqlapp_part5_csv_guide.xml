@@ -1,0 +1,682 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  TSQL.APP Complete Reference - PART 5
+  CSV DATA SOURCE GUIDE
+  
+  Comprehensive guide for querying and utilizing CSV procedure catalogs.
+  This document provides practical methods for procedure verification and discovery.
+-->
+<tsqlapp-csv-guide version="2.0">
+
+  <overview>
+    <description>
+      TSQL.APP documentation includes comprehensive CSV files that catalog all
+      framework procedures with their complete parameter signatures. This guide
+      explains how to effectively query and utilize these CSV files for
+      procedure verification and code generation.
+    </description>
+    
+    <available-csv-files>
+      <file name="tsql.app_procs-all.csv">
+        <description>Complete procedure catalog</description>
+        <use-case>Comprehensive reference for all framework procedures</use-case>
+        <record-count>1519 rows covering all procedures and parameters</record-count>
+        <columns>
+          <column name="SchemaName">Schema (usually 'dbo')</column>
+          <column name="ProcedureName">Full procedure name</column>
+          <column name="ParameterName">Parameter name (including @)</column>
+          <column name="ParameterType">SQL data type</column>
+          <column name="ParameterSize">Size/length specification</column>
+          <column name="IsOutput">Whether parameter is OUTPUT</column>
+          <column name="IsRequired">Whether parameter is required</column>
+          <column name="DefaultValue">Default value if optional</column>
+        </columns>
+      </file>
+    </available-csv-files>
+  </overview>
+
+  <!-- METHOD 1: READING CSV FILES -->
+  <method name="reading-csv-files">
+    <title>Reading CSV Files in AI Context</title>
+    
+    <description>
+      AI systems can read and parse CSV files to verify procedures and parameters.
+      This is the PRIMARY method for procedure verification before code generation.
+    </description>
+    
+    <workflow>
+      <step number="1">
+        <action>Load the CSV file content</action>
+        <code>Read tsql.app_procs-all.csv into memory</code>
+      </step>
+      
+      <step number="2">
+        <action>Parse CSV structure</action>
+        <code>Understand columns: SchemaName, ProcedureName, ParameterName, etc.</code>
+      </step>
+      
+      <step number="3">
+        <action>Query for specific procedure</action>
+        <code>Filter rows where ProcedureName = 'sp_api_modal_text'</code>
+      </step>
+      
+      <step number="4">
+        <action>Extract parameter details</action>
+        <code>For each parameter: name, type, required, default</code>
+      </step>
+      
+      <step number="5">
+        <action>Validate against code being generated</action>
+        <code>Ensure all parameters match documented signature</code>
+      </step>
+    </workflow>
+
+    <example-queries>
+      <query name="find-procedure">
+        <description>Check if a procedure exists</description>
+        <pseudo-code>
+          <![CDATA[
+-- Conceptual query (adapt to your CSV parsing method)
+SELECT DISTINCT ProcedureName 
+FROM csv_data
+WHERE ProcedureName = 'sp_api_modal_text'
+
+-- Expected result: One row if exists, zero rows if not
+          ]]>
+        </pseudo-code>
+      </query>
+
+      <query name="get-all-parameters">
+        <description>Get complete parameter list for a procedure</description>
+        <pseudo-code>
+          <![CDATA[
+SELECT 
+    ParameterName,
+    ParameterType,
+    ParameterSize,
+    IsOutput,
+    IsRequired,
+    DefaultValue
+FROM csv_data
+WHERE ProcedureName = 'sp_api_modal_text'
+ORDER BY ParameterName
+
+-- Expected result:
+-- @class, nvarchar, -1, False, False, NULL
+-- @markdown, bit, NULL, False, False, 0
+-- @print, bit, NULL, False, False, 1
+-- @text, nvarchar, -1, False, True, NULL
+          ]]>
+        </pseudo-code>
+      </query>
+
+      <query name="find-procedures-by-pattern">
+        <description>Search for procedures matching a pattern</description>
+        <pseudo-code>
+          <![CDATA[
+SELECT DISTINCT ProcedureName 
+FROM csv_data
+WHERE ProcedureName LIKE '%modal%'
+ORDER BY ProcedureName
+
+-- Returns all modal-related procedures:
+-- sp_api_modal_button
+-- sp_api_modal_clear
+-- sp_api_modal_date
+-- sp_api_modal_datetime
+-- ... etc.
+          ]]>
+        </pseudo-code>
+      </query>
+
+      <query name="get-required-parameters">
+        <description>Find only required parameters</description>
+        <pseudo-code>
+          <![CDATA[
+SELECT ParameterName, ParameterType
+FROM csv_data
+WHERE ProcedureName = 'sp_api_modal_input'
+  AND IsRequired = 'True'
+
+-- Expected result:
+-- @name, nvarchar
+-- @value, nvarchar (with OUTPUT)
+          ]]>
+        </pseudo-code>
+      </query>
+
+      <query name="check-output-parameters">
+        <description>Identify OUTPUT parameters</description>
+        <pseudo-code>
+          <![CDATA[
+SELECT ParameterName
+FROM csv_data
+WHERE ProcedureName = 'sp_api_modal_button'
+  AND IsOutput = 'True'
+
+-- Expected result:
+-- @valueout
+          ]]>
+        </pseudo-code>
+      </query>
+    </example-queries>
+
+  </method>
+
+  <!-- METHOD 2: VERIFICATION WORKFLOW -->
+  <verification-workflow>
+    <title>Procedure Verification Before Code Generation</title>
+    
+    <description>
+      Always follow this workflow when generating code that uses framework procedures.
+      This ensures 100% compliance with documented procedures.
+    </description>
+
+    <workflow-steps>
+      <step number="1" critical="true">
+        <name>Extract Procedure Name from Request</name>
+        <action>Identify which procedure(s) the user wants to use</action>
+        <example>User asks: "Create a modal with a text input"</example>
+        <result>Need to verify: sp_api_modal_input</result>
+      </step>
+
+      <step number="2" critical="true">
+        <name>Query CSV for Procedure Existence</name>
+        <action>Search CSV for exact procedure name</action>
+        <validation>
+          <if-found>Proceed to step 3</if-found>
+          <if-not-found>
+            STOP and inform user:
+            "The procedure '[name]' does not exist in the TSQL.APP framework.
+            Available alternatives are: [list similar procedures]"
+          </if-not-found>
+        </validation>
+      </step>
+
+      <step number="3" critical="true">
+        <name>Extract Complete Parameter List</name>
+        <action>Get ALL parameters for the procedure from CSV</action>
+        <details-to-capture>
+          <item>Parameter names (exact spelling with @)</item>
+          <item>Data types</item>
+          <item>Which are OUTPUT parameters</item>
+          <item>Which are required vs optional</item>
+          <item>Default values for optional parameters</item>
+        </details-to-capture>
+      </step>
+
+      <step number="4" critical="true">
+        <name>Validate Required Parameters</name>
+        <action>Ensure code includes all required parameters</action>
+        <example>
+          <![CDATA[
+For sp_api_modal_text:
+Required: @text
+Optional: @class, @markdown, @print
+
+Minimum valid call:
+EXEC sp_api_modal_text @text = @Message;
+
+Enhanced call with optional params:
+EXEC sp_api_modal_text 
+    @text = @Message, 
+    @class = N'h3',
+    @print = 1;
+          ]]>
+        </example>
+      </step>
+
+      <step number="5" critical="true">
+        <name>Verify OUTPUT Parameter Handling</name>
+        <action>Ensure OUTPUT parameters are properly declared and used</action>
+        <pattern>
+          <![CDATA[
+-- Variable must be declared
+DECLARE @ButtonValue NVARCHAR(MAX);
+
+-- Must use OUT or OUTPUT keyword
+EXEC sp_api_modal_button 
+    @name = N'@ButtonValue',
+    @value = N'Submit',
+    @valueout = @ButtonValue OUT;  -- Must have OUT/OUTPUT
+          ]]>
+        </pattern>
+      </step>
+
+      <step number="6">
+        <name>Cross-Reference with Mandated Practices</name>
+        <action>Ensure code follows all mandated practices</action>
+        <checks>
+          <check>Variables declared at top</check>
+          <check>No calculations in EXEC parameters</check>
+          <check>Unicode compliance (NVARCHAR, N prefix)</check>
+          <check>Dedicated variable for each OUTPUT parameter</check>
+        </checks>
+      </step>
+    </workflow-steps>
+
+  </verification-workflow>
+
+  <!-- METHOD 3: COMMON LOOKUP PATTERNS -->
+  <common-lookup-patterns>
+    <title>Common CSV Lookup Patterns</title>
+    
+    <pattern name="verify-modal-component">
+      <scenario>User wants to add a UI component to modal</scenario>
+      <steps>
+        <step>Search CSV for: ProcedureName LIKE 'sp_api_modal_%'</step>
+        <step>Find closest match to user's intent</step>
+        <step>Extract all parameters for that procedure</step>
+        <step>Generate code using verified procedure</step>
+      </steps>
+      <example>
+        <user-request>I need a date picker in my modal</user-request>
+        <csv-search>sp_api_modal_date</csv-search>
+        <csv-result>
+          Found: sp_api_modal_date
+          Parameters:
+          - @name (nvarchar, required)
+          - @value (nvarchar, OUTPUT, required)
+          - @label (nvarchar, optional)
+          - @focus (bit, optional)
+        </csv-result>
+        <generated-code>
+          <![CDATA[
+DECLARE @SelectedDate NVARCHAR(MAX);
+
+EXEC sp_api_modal_date 
+    @name = N'@SelectedDate',
+    @value = @SelectedDate OUT,
+    @label = N'Select Date',
+    @focus = 1;
+          ]]>
+        </generated-code>
+      </example>
+    </pattern>
+
+    <pattern name="find-alternatives">
+      <scenario>User asks for non-existent procedure</scenario>
+      <steps>
+        <step>Search CSV for requested procedure name</step>
+        <step>If not found, search for similar procedures by pattern</step>
+        <step>Present alternatives to user</step>
+        <step>Explain why original doesn't exist and how alternative achieves same goal</step>
+      </steps>
+      <example>
+        <user-request>Use sp_api_modal_title to show a title</user-request>
+        <csv-search>sp_api_modal_title</csv-search>
+        <csv-result>Not found</csv-result>
+        <alternative-search>sp_api_modal_text</alternative-search>
+        <response>
+          "The procedure 'sp_api_modal_title' does not exist in TSQL.APP.
+          
+          To display a title, use sp_api_modal_text with a header class:
+          
+          EXEC sp_api_modal_text @text = N'My Title', @class = N'h3';
+          
+          Available header classes: h1, h2, h3, h4, h5"
+        </response>
+      </example>
+    </pattern>
+
+    <pattern name="parameter-count-validation">
+      <scenario>Verify user is not inventing parameters</scenario>
+      <steps>
+        <step>Get parameter count from CSV for procedure</step>
+        <step>Compare with parameters in generated/proposed code</step>
+        <step>Flag any parameters not in CSV</step>
+      </steps>
+      <example>
+        <proposed-code>
+          <![CDATA[
+EXEC sp_api_modal_text 
+    @text = @Message,
+    @title = N'Header',  -- ❌ Does not exist
+    @style = N'bold';    -- ❌ Does not exist
+          ]]>
+        </proposed-code>
+        <csv-validation>
+          sp_api_modal_text has these parameters:
+          - @text ✅
+          - @class ✅ (not used, but valid)
+          - @markdown ✅ (not used, but valid)
+          - @print ✅ (not used, but valid)
+          
+          Invalid parameters:
+          - @title ❌ (does not exist)
+          - @style ❌ (does not exist)
+          
+          Correction: Use @class for styling
+        </csv-validation>
+        <corrected-code>
+          <![CDATA[
+DECLARE @HeaderText NVARCHAR(MAX);
+SET @HeaderText = N'Header';
+EXEC sp_api_modal_text @text = @HeaderText, @class = N'h3';
+
+DECLARE @Message NVARCHAR(MAX);
+SET @Message = N'Your message here';
+EXEC sp_api_modal_text @text = @Message;
+          ]]>
+        </corrected-code>
+      </example>
+    </pattern>
+
+  </common-lookup-patterns>
+
+  <!-- METHOD 4: INTEGRATION WITH AI WORKFLOW -->
+  <ai-integration>
+    <title>Integrating CSV Verification into AI Code Generation</title>
+    
+    <enhanced-workflow>
+      <description>
+        This workflow integrates CSV verification into the 5-phase generation process
+        from Part 4 (AI Instructions).
+      </description>
+
+      <phase name="analysis" enhanced="true">
+        <original>Analyze user requirements</original>
+        <enhanced>
+          <action>Analyze user requirements AND identify procedures needed</action>
+          <new-step>Create list of all procedures that will be used</new-step>
+        </enhanced>
+      </phase>
+
+      <phase name="verification" enhanced="true">
+        <original>Verify all procedures and parameters</original>
+        <enhanced>
+          <action>Query CSV for each procedure in the list</action>
+          <substeps>
+            <substep>For each procedure, confirm existence in CSV</substep>
+            <substep>Extract complete parameter signature</substep>
+            <substep>Document required vs optional parameters</substep>
+            <substep>Note any OUTPUT parameters</substep>
+            <substep>Record default values for optional parameters</substep>
+          </substeps>
+          <validation>
+            If ANY procedure not found in CSV:
+            - STOP generation
+            - Search for alternatives
+            - Present alternatives to user
+            - Get user confirmation before proceeding
+          </validation>
+        </enhanced>
+      </phase>
+
+      <phase name="code-generation" enhanced="true">
+        <original>Generate the actual code</original>
+        <enhanced>
+          <action>Generate code using ONLY verified procedures with exact parameter names</action>
+          <inline-validation>
+            As each EXEC statement is generated:
+            - Cross-reference parameter names with CSV data
+            - Ensure spelling matches exactly
+            - Include required parameters
+            - Add optional parameters only if needed
+          </inline-validation>
+        </enhanced>
+      </phase>
+
+      <phase name="post-generation-review" enhanced="true">
+        <original>Review generated code for compliance</original>
+        <enhanced>
+          <action>Review AND verify against CSV</action>
+          <additional-checks>
+            <check>Every procedure used exists in CSV ✓</check>
+            <check>Every parameter used exists in CSV for that procedure ✓</check>
+            <check>No invented parameters ✓</check>
+            <check>All required parameters present ✓</check>
+            <check>OUTPUT parameters properly handled ✓</check>
+          </additional-checks>
+        </enhanced>
+      </phase>
+    </enhanced-workflow>
+
+  </ai-integration>
+
+  <!-- PRACTICAL EXAMPLES -->
+  <practical-examples>
+    <title>Real-World CSV Verification Examples</title>
+
+    <example name="button-verification">
+      <description>Verifying sp_api_modal_button before use</description>
+      
+      <csv-query>
+        Filter CSV where ProcedureName = 'sp_api_modal_button'
+      </csv-query>
+      
+      <csv-results>
+        <parameters>
+          <param name="@class" type="nvarchar" required="false" default="NULL" />
+          <param name="@confirm" type="nvarchar" required="false" default="NULL" />
+          <param name="@inline" type="bit" required="false" default="1" />
+          <param name="@key" type="nvarchar" required="false" default="NULL" />
+          <param name="@name" type="nvarchar" required="true" default="NULL" />
+          <param name="@value" type="nvarchar" required="true" default="NULL" />
+          <param name="@valueout" type="nvarchar" required="false" output="true" default="NULL" />
+        </parameters>
+      </csv-results>
+      
+      <code-generation>
+        <![CDATA[
+-- Step 1: Declare variable (mandated practice)
+DECLARE @SubmitButton NVARCHAR(MAX);
+
+-- Step 2: Generate EXEC with verified parameters
+EXEC sp_api_modal_button 
+    @name = N'@SubmitButton',      -- Required ✓
+    @value = N'Submit',             -- Required ✓
+    @valueout = @SubmitButton OUT,  -- Optional but needed for interaction ✓
+    @class = N'btn-primary',        -- Optional, enhances appearance ✓
+    @key = N'Enter';                -- Optional, adds keyboard shortcut ✓
+
+-- Not used but available from CSV:
+-- @confirm (for confirmation dialog)
+-- @inline (button display mode)
+        ]]>
+      </code-generation>
+    </example>
+
+    <example name="detecting-invented-procedure">
+      <description>User requests non-existent procedure</description>
+      
+      <user-request>
+        Can you add a sp_api_modal_title to show a big heading?
+      </user-request>
+      
+      <csv-query>
+        Filter CSV where ProcedureName = 'sp_api_modal_title'
+      </csv-query>
+      
+      <csv-results>
+        NO ROWS FOUND ❌
+      </csv-results>
+      
+      <alternative-search>
+        Filter CSV where ProcedureName LIKE '%modal%text%'
+        Result: sp_api_modal_text
+      </alternative-search>
+      
+      <response-to-user>
+        "I cannot find 'sp_api_modal_title' in the TSQL.APP framework documentation.
+        
+        To display a heading, use sp_api_modal_text with the @class parameter:
+        
+        DECLARE @Title NVARCHAR(MAX);
+        SET @Title = N'My Big Heading';
+        EXEC sp_api_modal_text @text = @Title, @class = N'h1';
+        
+        Available heading sizes: h1 (largest) through h5 (smallest)"
+      </response-to-user>
+    </example>
+
+    <example name="parameter-name-correction">
+      <description>Correcting parameter name based on CSV</description>
+      
+      <incorrect-code>
+        <![CDATA[
+-- User's attempted code with wrong parameter name
+EXEC sp_api_modal_input 
+    @name = N'@Email',
+    @val = @Email OUT;  -- ❌ Wrong parameter name
+        ]]>
+      </incorrect-code>
+      
+      <csv-query>
+        Filter CSV where ProcedureName = 'sp_api_modal_input'
+      </csv-query>
+      
+      <csv-results>
+        Parameters include:
+        - @value (OUTPUT) ✓  (NOT @val)
+        - @name ✓
+        - @type
+        - @placeholder
+        - @focus
+        ... etc
+      </csv-results>
+      
+      <corrected-code>
+        <![CDATA[
+-- Corrected with proper parameter name from CSV
+DECLARE @Email NVARCHAR(MAX);
+
+EXEC sp_api_modal_input 
+    @name = N'@Email',
+    @value = @Email OUT;  -- ✓ Correct parameter name
+        ]]>
+      </corrected-code>
+    </example>
+
+  </practical-examples>
+
+  <!-- TROUBLESHOOTING -->
+  <troubleshooting>
+    <title>CSV-Related Troubleshooting</title>
+
+    <issue name="procedure-not-in-csv">
+      <symptom>Cannot find procedure in CSV file</symptom>
+      <possible-causes>
+        <cause>Procedure name misspelled</cause>
+        <cause>Procedure is from different framework/version</cause>
+        <cause>Procedure is custom, not part of core framework</cause>
+        <cause>Using wrong CSV file (check both common and all)</cause>
+      </possible-causes>
+      <resolution>
+        <step>Verify spelling (case-insensitive search)</step>
+        <step>Search both CSV files</step>
+        <step>Search for similar procedure names</step>
+        <step>If still not found, inform user procedure doesn't exist</step>
+        <step>Suggest documented alternatives</step>
+      </resolution>
+    </issue>
+
+    <issue name="parameter-mismatch">
+      <symptom>Parameter exists in code but not in CSV</symptom>
+      <possible-causes>
+        <cause>Parameter name misspelled</cause>
+        <cause>Using parameter from different procedure</cause>
+        <cause>Invented parameter that doesn't exist</cause>
+      </possible-causes>
+      <resolution>
+        <step>List all valid parameters from CSV for this procedure</step>
+        <step>Compare with parameters in code</step>
+        <step>Correct or remove invalid parameters</step>
+        <step>Ensure required parameters are present</step>
+      </resolution>
+    </issue>
+
+    <issue name="output-parameter-confusion">
+      <symptom>Unclear which parameters are OUTPUT</symptom>
+      <resolution>
+        <step>Check IsOutput column in CSV</step>
+        <step>Parameters with IsOutput = 'True' require OUT keyword</step>
+        <step>These parameters return values to variables</step>
+        <step>Must have corresponding variable declared</step>
+      </resolution>
+    </issue>
+
+  </troubleshooting>
+
+  <!-- BEST PRACTICES -->
+  <best-practices>
+    <title>Best Practices for CSV Usage</title>
+
+    <practice number="1">
+      <name>Always Verify Before Generating</name>
+      <description>
+        Never generate code with a procedure call without first verifying
+        the procedure exists in the CSV and extracting its parameters.
+      </description>
+      <benefit>Prevents 100% of "procedure not found" errors</benefit>
+    </practice>
+
+    <practice number="2">
+      <name>Keep CSV Data Current</name>
+      <description>
+        If framework updates, ensure CSV files are regenerated to reflect
+        new procedures or parameter changes.
+      </description>
+      <benefit>Maintains accuracy of generated code</benefit>
+    </practice>
+
+    <practice number="3">
+      <name>Document CSV Query Process</name>
+      <description>
+        When generating code, add comments showing which CSV entries
+        were used for verification.
+      </description>
+      <benefit>Makes code generation process transparent and auditable</benefit>
+    </practice>
+
+    <practice number="4">
+      <name>Build a Procedure Cache</name>
+      <description>
+        For frequently used procedures, maintain a quick-reference
+        cache of their signatures to speed up verification.
+      </description>
+      <benefit>Improves generation speed for common patterns</benefit>
+    </practice>
+
+    <practice number="5">
+      <name>Validate Complete Signatures</name>
+      <description>
+        Don't just check if procedure exists - validate the complete
+        parameter signature including types, required/optional status,
+        and OUTPUT designation.
+      </description>
+      <benefit>Prevents parameter-related runtime errors</benefit>
+    </practice>
+
+  </best-practices>
+
+  <!-- SUMMARY -->
+  <summary>
+    <key-points>
+      <point>CSV files are the authoritative source for procedure signatures</point>
+      <point>Always verify procedures exist before generating code</point>
+      <point>Extract complete parameter details: names, types, required/optional, OUTPUT</point>
+      <point>Never invent procedures or parameters not found in CSV</point>
+      <point>Use CSV verification as part of pre-generation workflow</point>
+      <point>Search for alternatives when requested procedures don't exist</point>
+      <point>Validate generated code against CSV data post-generation</point>
+    </key-points>
+
+    <workflow-integration>
+      CSV verification integrates into every phase of code generation:
+      - Analysis: Identify procedures needed
+      - Verification: Confirm all procedures exist in CSV
+      - Generation: Use exact parameter names from CSV
+      - Review: Validate against CSV data
+    </workflow-integration>
+
+    <success-criteria>
+      <criterion>100% of procedures used exist in CSV</criterion>
+      <criterion>100% of parameters match CSV documentation</criterion>
+      <criterion>All required parameters present in code</criterion>
+      <criterion>OUTPUT parameters properly handled</criterion>
+      <criterion>No invented procedures or parameters</criterion>
+    </success-criteria>
+  </summary>
+
+</tsqlapp-csv-guide>

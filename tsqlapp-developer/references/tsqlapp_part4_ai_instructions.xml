@@ -1,0 +1,399 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  TSQL.APP Complete Reference - PART 4
+  AI PROCESSING INSTRUCTIONS
+  
+  Specific instructions for AI systems generating TSQL.APP code.
+  These instructions define the workflow and validation process.
+-->
+<tsqlapp-ai-instructions version="2.0">
+
+  <!-- BEFORE GENERATING CODE -->
+  <pre-generation-checklist>
+    <step number="1">
+      <action>Verify all procedures in CSV files or database schema</action>
+      <validation>Never assume a procedure exists without verification</validation>
+    </step>
+    <step number="2">
+      <action>Check all parameters match documented signatures</action>
+      <validation>Query database or CSV for exact parameter names and types</validation>
+    </step>
+    <step number="3">
+      <action>Ensure all variables declared at script top</action>
+      <validation>No late declarations anywhere in generated code</validation>
+    </step>
+    <step number="4">
+      <action>Verify no calculations in EXEC parameters</action>
+      <validation>All values prepared in variables before EXEC calls</validation>
+    </step>
+    <step number="5">
+      <action>Confirm proper state synchronization pattern</action>
+      <validation>sp_api_modal_get_value called before UI drawing</validation>
+    </step>
+  </pre-generation-checklist>
+
+  <!-- CODE GENERATION WORKFLOW -->
+  <generation-workflow>
+    
+    <phase name="analysis">
+      <description>Analyze user requirements</description>
+      <actions>
+        <action>Identify if single-action form or multi-step form needed</action>
+        <action>Determine which UI components required</action>
+        <action>Identify data sources and operations</action>
+        <action>Plan validation requirements</action>
+      </actions>
+    </phase>
+
+    <phase name="structure-planning">
+      <description>Plan script structure</description>
+      <actions>
+        <action>List all required variables (UI controls and business logic)</action>
+        <action>Identify state synchronization needs</action>
+        <action>Plan UI component order</action>
+        <action>Determine flow control points (pause points)</action>
+        <action>Plan error handling strategy</action>
+      </actions>
+    </phase>
+
+    <phase name="verification">
+      <description>Verify all procedures and parameters</description>
+      <actions>
+        <action>Look up each procedure in documentation/CSV</action>
+        <action>Verify parameter names exactly match</action>
+        <action>Check for any invented procedure names</action>
+        <action>Validate all @name parameters match variable names</action>
+      </actions>
+    </phase>
+
+    <phase name="code-generation">
+      <description>Generate the actual code</description>
+      <structure>
+        <section order="1">Variable declarations (ALL at top)</section>
+        <section order="2">State synchronization (sp_api_modal_get_value)</section>
+        <section order="3">Prepare display values</section>
+        <section order="4">Draw UI components</section>
+        <section order="5">Pause point (IF buttons NULL RETURN)</section>
+        <section order="6">Handle user actions with validation</section>
+        <section order="7">Success/cleanup/close modal</section>
+      </structure>
+    </phase>
+
+    <phase name="post-generation-review">
+      <description>Review generated code for compliance</description>
+      <checklist>
+        <item>All variables declared at top? ✓</item>
+        <item>No calculations in EXEC statements? ✓</item>
+        <item>State sync before UI? ✓</item>
+        <item>Button state reset after validation errors? ✓</item>
+        <item>All procedures verified to exist? ✓</item>
+        <item>Unicode compliance (N prefix, NVARCHAR)? ✓</item>
+        <item>Proper error handling? ✓</item>
+        <item>Temp tables defined once? ✓</item>
+      </checklist>
+    </phase>
+
+  </generation-workflow>
+
+  <!-- HANDLING UNCERTAINTY -->
+  <uncertainty-protocol>
+    <when-uncertain-about-procedure>
+      <response>
+        "I need to verify if procedure [name] exists in the TSQL.APP framework. 
+        Let me check the documentation."
+      </response>
+      <action>Query database schema or check CSV files</action>
+      <never-do>Never fabricate procedure names or assume they exist</never-do>
+    </when-uncertain-about-procedure>
+
+    <when-uncertain-about-parameters>
+      <response>
+        "I need to verify the exact parameters for [procedure_name]. 
+        Let me check the documented signature."
+      </response>
+      <action>Query database for sp_help 'procedure_name' or check CSV</action>
+      <never-do>Never guess parameter names or assume optional parameters</never-do>
+    </when-uncertain-about-parameters>
+
+    <when-feature-not-documented>
+      <response>
+        "The [feature] is not documented in the materials I have access to. 
+        I can only work with documented procedures and features."
+      </response>
+      <action>Explicitly state what is not available</action>
+      <never-do>Never claim familiarity with undocumented features</never-do>
+    </when-feature-not-documented>
+  </uncertainty-protocol>
+
+  <!-- KNOWLEDGE BOUNDARIES -->
+  <knowledge-boundaries>
+    <what-ai-knows>
+      <item>All mandated practices from Part 1</item>
+      <item>Core procedures documented in Part 2</item>
+      <item>Common patterns from Part 3</item>
+      <item>Procedures listed in CSV files</item>
+      <item>Framework architecture and reactive execution model</item>
+    </what-ai-knows>
+
+    <what-ai-must-verify>
+      <item>Specific procedure parameters</item>
+      <item>Exact parameter names and types</item>
+      <item>Optional vs required parameters</item>
+      <item>Default parameter values</item>
+      <item>Procedure existence in specific implementation</item>
+    </what-ai-must-verify>
+
+    <what-ai-must-not-do>
+      <item>Invent procedure names</item>
+      <item>Assume parameter signatures</item>
+      <item>Create procedures with fantasy names like sp_api_modal_title</item>
+      <item>Use procedures not verified in documentation</item>
+      <item>Guess at framework behavior</item>
+    </what-ai-must-not-do>
+  </knowledge-boundaries>
+
+  <!-- ERROR DETECTION AND CORRECTION -->
+  <error-detection>
+    
+    <common-error type="invented-procedure">
+      <symptoms>
+        <symptom>Procedure name sounds plausible but not documented</symptom>
+        <symptom>Pattern like sp_api_modal_[concept] for concepts like title, info, warning</symptom>
+      </symptoms>
+      <detection>
+        Check if procedure exists in CSV or database schema
+      </detection>
+      <correction>
+        Use sp_api_modal_text with appropriate @class parameter instead
+      </correction>
+      <examples>
+        <example>
+          <wrong>sp_api_modal_title</wrong>
+          <correct>sp_api_modal_text @text=N'Title', @class=N'h3'</correct>
+        </example>
+        <example>
+          <wrong>sp_api_modal_info</wrong>
+          <correct>sp_api_modal_text @text=@Msg, @class=N'alert alert-success'</correct>
+        </example>
+      </examples>
+    </common-error>
+
+    <common-error type="inline-calculation">
+      <symptoms>
+        <symptom>CONCAT, +, or functions directly in EXEC parameters</symptom>
+        <symptom>Expressions like @text = 'Hello ' + @Name</symptom>
+      </symptoms>
+      <detection>
+        Scan all EXEC statements for expressions in parameters
+      </detection>
+      <correction>
+        Declare variable, set value, then pass variable to EXEC
+      </correction>
+      <examples>
+        <example>
+          <wrong>EXEC sp_api_toast @text = CONCAT('Hi ', @Name)</wrong>
+          <correct>
+            DECLARE @Msg NVARCHAR(MAX);
+            SET @Msg = CONCAT(N'Hi ', @Name);
+            EXEC sp_api_toast @text = @Msg;
+          </correct>
+        </example>
+      </examples>
+    </common-error>
+
+    <common-error type="missing-state-sync">
+      <symptoms>
+        <symptom>UI components drawn before sp_api_modal_get_value</symptom>
+        <symptom>Button values not synchronized</symptom>
+      </symptoms>
+      <detection>
+        Check that get_value calls appear before any modal_input/modal_button calls
+      </detection>
+      <correction>
+        Move all sp_api_modal_get_value calls to top, immediately after DECLARE section
+      </correction>
+    </common-error>
+
+    <common-error type="missing-button-reset">
+      <symptoms>
+        <symptom>Validation error followed by RETURN without resetting button</symptom>
+        <symptom>Infinite validation loop</symptom>
+      </symptoms>
+      <detection>
+        Check validation error paths for sp_api_modal_value calls
+      </detection>
+      <correction>
+        Add sp_api_modal_value @name=N'@ButtonName', @value=NULL before RETURN
+      </correction>
+    </common-error>
+
+    <common-error type="late-variable-declaration">
+      <symptoms>
+        <symptom>DECLARE statement appears after any SET, EXEC, or logic</symptom>
+      </symptoms>
+      <detection>
+        Verify all DECLARE statements are at absolute top of script
+      </detection>
+      <correction>
+        Move all DECLARE statements to beginning, before any other code
+      </correction>
+    </common-error>
+
+    <common-error type="reused-out-variable">
+      <symptoms>
+        <symptom>Same variable used for @value OUT in multiple controls</symptom>
+        <symptom>Generic variable like @p_value used repeatedly</symptom>
+      </symptoms>
+      <detection>
+        Check that each UI control has its own unique OUT variable
+      </detection>
+      <correction>
+        Create dedicated variable for each control's OUT parameter
+      </correction>
+    </common-error>
+
+  </error-detection>
+
+  <!-- RESPONSE TEMPLATES -->
+  <response-templates>
+    
+    <template name="procedure-not-found">
+      <text>
+        I cannot find the procedure "[procedure_name]" in the TSQL.APP documentation. 
+        The documented way to achieve this is: [alternative].
+        
+        Would you like me to use the documented approach?
+      </text>
+    </template>
+
+    <template name="need-to-verify">
+      <text>
+        I need to verify the exact parameters for [procedure_name] before generating code. 
+        Let me check the database schema.
+      </text>
+    </template>
+
+    <template name="mandated-practice-violation">
+      <text>
+        The requested approach would violate TSQL.APP Mandated Practice #[number]: [practice_name].
+        
+        The correct approach is: [correct_approach].
+        
+        This is a critical requirement and cannot be bypassed.
+      </text>
+    </template>
+
+    <template name="feature-not-available">
+      <text>
+        The [feature_name] is not part of the documented TSQL.APP framework. 
+        
+        Available alternatives:
+        - [alternative_1]
+        - [alternative_2]
+        
+        Would you like me to use one of these documented approaches?
+      </text>
+    </template>
+
+  </response-templates>
+
+  <!-- CODE REVIEW CRITERIA -->
+  <code-review-criteria>
+    
+    <criterion name="mandated-practices-compliance" severity="critical">
+      <description>All 11 mandated practices must be followed</description>
+      <validation>
+        Review generated code against each mandated practice rule
+      </validation>
+      <failure-action>
+        Regenerate code with corrections, never deliver non-compliant code
+      </failure-action>
+    </criterion>
+
+    <criterion name="procedure-verification" severity="critical">
+      <description>All procedures must exist in documentation</description>
+      <validation>
+        Cross-reference every procedure call with CSV files or database schema
+      </validation>
+      <failure-action>
+        Replace invented procedures with documented alternatives
+      </failure-action>
+    </criterion>
+
+    <criterion name="parameter-accuracy" severity="high">
+      <description>Parameter names and types must match exactly</description>
+      <validation>
+        Verify each parameter against documented signature
+      </validation>
+      <failure-action>
+        Correct parameter names/types to match documentation
+      </failure-action>
+    </criterion>
+
+    <criterion name="reactive-model-compliance" severity="high">
+      <description>Code must properly implement reactive execution model</description>
+      <validation>
+        - State sync before UI drawing
+        - Pause point with NULL check
+        - Button reset after validation errors
+      </validation>
+      <failure-action>
+        Add missing state management code
+      </failure-action>
+    </criterion>
+
+    <criterion name="unicode-compliance" severity="medium">
+      <description>All strings must use NVARCHAR and N prefix</description>
+      <validation>
+        Scan code for VARCHAR or missing N prefixes
+      </validation>
+      <failure-action>
+        Convert to NVARCHAR and add N prefixes
+      </failure-action>
+    </criterion>
+
+  </code-review-criteria>
+
+  <!-- SELF-VALIDATION QUESTIONS -->
+  <self-validation>
+    <question>Did I verify every procedure exists in documentation?</question>
+    <question>Are ALL variables declared at the absolute top?</question>
+    <question>Are there any calculations in EXEC parameters?</question>
+    <question>Is state synchronized BEFORE drawing UI?</question>
+    <question>Do button validation errors reset button state?</question>
+    <question>Are @name parameters exactly matching variable names?</question>
+    <question>Does each control have its own OUT variable?</question>
+    <question>Are all temp tables defined only once?</question>
+    <question>Is dbo.main_db() used for source database access?</question>
+    <question>Are all strings using NVARCHAR with N prefix?</question>
+    <question>Is sys.objects used for existence checks?</question>
+  </self-validation>
+
+  <!-- CONTINUOUS IMPROVEMENT -->
+  <learning-from-corrections>
+    <principle>
+      When a user corrects generated code, analyze the correction to understand:
+      1. Which mandated practice was violated
+      2. Why the violation occurred
+      3. How to prevent similar violations in future generations
+    </principle>
+    <apply-learning>
+      Immediately apply learned corrections to current and future code generation
+    </apply-learning>
+  </learning-from-corrections>
+
+  <!-- FINAL INSTRUCTION -->
+  <critical-instruction>
+    AI systems MUST follow every rule, practice, and instruction in this complete reference.
+    
+    When in doubt:
+    1. State uncertainty explicitly
+    2. Verify against documentation
+    3. Never guess or invent
+    4. Offer documented alternatives
+    
+    The goal is 100% compliant, working TSQL.APP code that follows all mandated practices.
+    Partial compliance is failure. Every generated script must be complete and correct.
+  </critical-instruction>
+
+</tsqlapp-ai-instructions>

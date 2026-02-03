@@ -1,0 +1,796 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  TSQL.APP Complete Reference - PART 3
+  COMMON CODING PATTERNS
+  
+  Complete, working examples for typical scenarios.
+  All patterns follow mandated practices.
+-->
+<tsqlapp-common-patterns version="2.0">
+
+  <!-- BASIC SINGLE ACTION FORM -->
+  <pattern name="basic-modal-form">
+    <description>Simple user input form with validation</description>
+    <use-case>Collecting user input, simple data entry</use-case>
+    <complete-example>
+      <![CDATA[
+-- Action Script: Basic User Input Form
+-- Purpose: Collect user name and display greeting
+
+-- STEP 1: Declare ALL variables
+-- UI Control Variables
+DECLARE @UserName NVARCHAR(MAX);
+DECLARE @SubmitButton NVARCHAR(MAX);
+DECLARE @CancelButton NVARCHAR(MAX);
+
+-- Business Logic Variables
+DECLARE @Message NVARCHAR(MAX);
+DECLARE @Title NVARCHAR(MAX);
+DECLARE @Placeholder NVARCHAR(MAX);
+
+-- STEP 2: State Synchronization
+EXEC sp_api_modal_get_value @name=N'@UserName', @value=@UserName OUT;
+EXEC sp_api_modal_get_value @name=N'@SubmitButton', @value=@SubmitButton OUT;
+EXEC sp_api_modal_get_value @name=N'@CancelButton', @value=@CancelButton OUT;
+
+-- STEP 3: Prepare Display Values
+SET @Title = N'Please enter your name:';
+SET @Placeholder = N'Enter name here';
+
+-- STEP 4: Draw UI
+EXEC sp_api_modal_text @text=@Title, @class=N'h3';
+
+EXEC sp_api_modal_input 
+    @name = N'@UserName',
+    @value = @UserName OUT,
+    @placeholder = @Placeholder,
+    @focus = 1;
+
+EXEC sp_api_modal_button 
+    @name = N'@SubmitButton',
+    @value = N'Submit',
+    @valueout = @SubmitButton OUT,
+    @class = N'btn-primary',
+    @key = N'Enter',
+    @inline = 1;
+
+EXEC sp_api_modal_button 
+    @name = N'@CancelButton',
+    @value = N'Cancel',
+    @valueout = @CancelButton OUT,
+    @class = N'btn-secondary',
+    @key = N'Escape',
+    @inline = 1;
+
+-- STEP 5: Pause Point
+IF @SubmitButton IS NULL AND @CancelButton IS NULL
+    RETURN;
+
+-- STEP 6: Handle Actions
+
+-- Handle Cancel
+IF @CancelButton IS NOT NULL
+BEGIN
+    EXEC sp_api_modal_clear;
+    RETURN;
+END
+
+-- Handle Submit with Validation
+IF @SubmitButton IS NOT NULL
+BEGIN
+    -- Validate input
+    IF LEN(TRIM(ISNULL(@UserName, N''))) < 2
+    BEGIN
+        SET @Message = N'Please enter a name (at least 2 characters)';
+        EXEC sp_api_toast @text=@Message, @class=N'btn-warning';
+        
+        -- CRITICAL: Reset button state
+        EXEC sp_api_modal_value @name=N'@SubmitButton', @value=NULL;
+        RETURN;
+    END
+    
+    -- Success
+    SET @Message = CONCAT(N'Hello, ', @UserName, N'! Welcome!');
+    EXEC sp_api_toast @text=@Message, @class=N'btn-success';
+    EXEC sp_api_modal_clear;
+    RETURN;
+END
+      ]]>
+    </complete-example>
+  </pattern>
+
+  <!-- DATA DISPLAY WITH EXPORT -->
+  <pattern name="data-display-table">
+    <description>Display formatted data with grouping and export</description>
+    <use-case>Reports, data visualization with print/Excel options</use-case>
+    <complete-example>
+      <![CDATA[
+-- Action Script: Sales Report with Export
+-- Purpose: Display sales data with grouping and export options
+
+-- STEP 1: Declare variables
+DECLARE @CloseButton NVARCHAR(MAX);
+DECLARE @Message NVARCHAR(MAX);
+DECLARE @Title NVARCHAR(MAX);
+DECLARE @ErrorMsg NVARCHAR(MAX);
+
+-- STEP 2: State sync
+EXEC sp_api_modal_get_value @name=N'@CloseButton', @value=@CloseButton OUT;
+
+-- STEP 3: Data processing
+BEGIN TRY
+    -- Create formatted temp table
+    IF OBJECT_ID('tempdb..#SalesReport') IS NOT NULL 
+        DROP TABLE #SalesReport;
+
+    SELECT 
+        [Department*] = DepartmentName,         -- Grouping
+        [Category*] = CategoryName,             -- Nested grouping
+        [Product] = ProductName,                -- Regular column
+        [Quantity@] = QuantitySold,             -- Totaling
+        [Amount@:2~text-success] = TotalAmount  -- Total + decimals + styling
+    INTO #SalesReport
+    FROM (
+        SELECT 
+            'Electronics' AS DepartmentName,
+            'Computers' AS CategoryName,
+            'Laptop' AS ProductName,
+            5 AS QuantitySold,
+            6499.95 AS TotalAmount
+        UNION ALL
+        SELECT 'Electronics', 'Phones', 'Smartphone', 12, 9599.88
+        UNION ALL
+        SELECT 'Home & Living', 'Furniture', 'Chair', 10, 1999.90
+    ) AS SampleData;
+
+    -- STEP 4: Display UI
+    SET @Title = N'Sales Report by Department';
+    EXEC sp_api_modal_text @text=@Title, @class=N'h3';
+
+    SET @Message = N'Sales report showing departmental performance.';
+    EXEC sp_api_modal_text @text=@Message, @class=N'text-muted';
+
+    -- Display table with print and Excel
+    EXEC sp_api_modal_table 
+        @tmptable = N'#SalesReport',
+        @print = 1,
+        @excel = 1,
+        @orderby = N'ORDER BY [Department*], [Category*]';
+
+    -- Close button
+    EXEC sp_api_modal_button 
+        @name = N'@CloseButton',
+        @value = N'Close',
+        @valueout = @CloseButton OUT,
+        @class = N'btn-secondary';
+
+    -- Pause point
+    IF @CloseButton IS NULL RETURN;
+
+    -- Handle close
+    SET @Message = N'Report closed';
+    EXEC sp_api_toast @text=@Message, @class=N'btn-info';
+    EXEC sp_api_modal_clear;
+
+END TRY
+BEGIN CATCH
+    SET @ErrorMsg = ERROR_MESSAGE();
+    EXEC sp_api_toast @text=@ErrorMsg, @class=N'btn-danger';
+    RETURN;
+END CATCH
+
+-- Cleanup
+IF OBJECT_ID('tempdb..#SalesReport') IS NOT NULL 
+    DROP TABLE #SalesReport;
+      ]]>
+    </complete-example>
+  </pattern>
+
+  <!-- MULTI-STEP FORM -->
+  <pattern name="multi-step-form">
+    <description>Multi-step wizard with state preservation</description>
+    <use-case>Complex data collection requiring multiple screens</use-case>
+    <complete-example>
+      <![CDATA[
+-- Action Script: Multi-Step Registration Form
+-- Purpose: Collect user information across multiple steps
+
+-- STEP 1: Declare variables
+DECLARE @Step INT;
+DECLARE @Name NVARCHAR(MAX);
+DECLARE @Email NVARCHAR(MAX);
+DECLARE @NextButton NVARCHAR(MAX);
+DECLARE @BackButton NVARCHAR(MAX);
+DECLARE @Message NVARCHAR(MAX);
+DECLARE @JsonState NVARCHAR(MAX);
+DECLARE @Title NVARCHAR(MAX);
+
+-- STEP 2: Sync state
+EXEC sp_api_modal_get_value @name=N'@Step', @value=@Step OUT;
+EXEC sp_api_modal_get_value @name=N'@Name', @value=@Name OUT;
+EXEC sp_api_modal_get_value @name=N'@Email', @value=@Email OUT;
+
+-- Initialize step
+IF @Step IS NULL SET @Step = 1;
+
+-- STEP 3: Step 1 - Name Input
+IF @Step = 1
+BEGIN
+    SET @Title = N'Step 1: Enter Your Name';
+    EXEC sp_api_modal_text @text=@Title, @class=N'h3';
+    
+    EXEC sp_api_modal_input 
+        @name = N'@Name', 
+        @value = @Name OUT, 
+        @placeholder = N'Full name',
+        @focus = 1;
+    
+    EXEC sp_api_modal_button 
+        @name = N'@NextButton', 
+        @value = N'Next →', 
+        @valueout = @NextButton OUT,
+        @class = N'btn-primary';
+
+    IF @NextButton IS NULL RETURN;
+
+    -- Validate
+    IF LEN(TRIM(ISNULL(@Name, N''))) < 2
+    BEGIN
+        SET @Message = N'Please enter a valid name';
+        EXEC sp_api_toast @text=@Message, @class=N'btn-warning';
+        EXEC sp_api_modal_value @name=N'@NextButton', @value=NULL;
+        RETURN;
+    END
+
+    -- Move to step 2
+    SET @JsonState = (
+        SELECT [@Step]=2, [@Name]=@Name 
+        FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
+    );
+    EXEC sp_api_modal_restart @values=@JsonState;
+    RETURN;
+END
+
+-- STEP 4: Step 2 - Email Input
+IF @Step = 2
+BEGIN
+    SET @Title = N'Step 2: Enter Your Email';
+    EXEC sp_api_modal_text @text=@Title, @class=N'h3';
+    
+    SET @Message = CONCAT(N'Name: ', @Name);
+    EXEC sp_api_modal_text @text=@Message, @class=N'text-muted';
+    
+    EXEC sp_api_modal_input 
+        @name = N'@Email', 
+        @value = @Email OUT, 
+        @placeholder = N'email@example.com',
+        @focus = 1;
+    
+    EXEC sp_api_modal_button 
+        @name = N'@BackButton', 
+        @value = N'← Back', 
+        @valueout = @BackButton OUT,
+        @class = N'btn-secondary',
+        @inline = 1;
+    
+    EXEC sp_api_modal_button 
+        @name = N'@NextButton', 
+        @value = N'Submit', 
+        @valueout = @NextButton OUT,
+        @class = N'btn-success',
+        @inline = 1;
+
+    IF @NextButton IS NULL AND @BackButton IS NULL RETURN;
+
+    -- Handle back
+    IF @BackButton IS NOT NULL
+    BEGIN
+        SET @JsonState = (
+            SELECT [@Step]=1, [@Name]=@Name 
+            FOR JSON PATH, WITHOUT_ARRAY_WRAPPER
+        );
+        EXEC sp_api_modal_restart @values=@JsonState;
+        RETURN;
+    END
+
+    -- Handle submit
+    IF @NextButton IS NOT NULL
+    BEGIN
+        -- Validate email
+        IF @Email IS NULL OR @Email NOT LIKE '%_@_%._%'
+        BEGIN
+            SET @Message = N'Please enter a valid email address';
+            EXEC sp_api_toast @text=@Message, @class=N'btn-warning';
+            EXEC sp_api_modal_value @name=N'@NextButton', @value=NULL;
+            RETURN;
+        END
+
+        -- Success
+        SET @Message = CONCAT(N'Registration complete! Name: ', @Name, N', Email: ', @Email);
+        EXEC sp_api_toast @text=@Message, @class=N'btn-success';
+        EXEC sp_api_modal_clear;
+        RETURN;
+    END
+END
+      ]]>
+    </complete-example>
+  </pattern>
+
+  <!-- FILE UPLOAD AND PROCESSING -->
+  <pattern name="file-upload-excel">
+    <description>Upload and process Excel files</description>
+    <use-case>Excel import, data upload from spreadsheets</use-case>
+    <complete-example>
+      <![CDATA[
+-- Action Script: Excel File Upload and Processing
+-- Purpose: Upload Excel file and display its contents
+
+-- STEP 1: Declare variables
+DECLARE @FileId INT;
+DECLARE @Message NVARCHAR(MAX);
+DECLARE @Json NVARCHAR(MAX);
+DECLARE @Title NVARCHAR(MAX);
+
+-- STEP 2: Display upload interface
+SET @Title = N'Upload Excel File';
+EXEC sp_api_modal_text @text=@Title, @class=N'h3';
+
+EXEC sp_api_modal_file_multi 
+    @name = N'file1',
+    @to_file_context = @card_name,
+    @to_file_context_id = @id,
+    @category = N'excel_import',
+    @api_files_id = @FileId OUT;
+
+-- STEP 3: Wait for file upload
+IF @FileId IS NULL RETURN;
+
+-- STEP 4: Process uploaded file
+BEGIN TRY
+    -- Read Excel contents
+    EXEC sp_api_excel_read 
+        @api_files_id = @FileId, 
+        @json = @Json OUT;
+    
+    -- Transform to table format
+    IF OBJECT_ID('tempdb..#ExcelData') IS NOT NULL 
+        DROP TABLE #ExcelData;
+    
+    SELECT ws, rn, c01, c02, c03, c04, c05 
+    INTO #ExcelData 
+    FROM fn_api_excel_from_json(@Json);
+    
+    -- Display the data
+    EXEC sp_api_modal_text @text=N'';
+    
+    SET @Title = N'Excel File Contents:';
+    EXEC sp_api_modal_text @text=@Title, @class=N'h4';
+    
+    EXEC sp_api_modal_table 
+        @tmptable = N'#ExcelData',
+        @print = 1,
+        @excel = 1;
+    
+    SET @Message = N'File processed successfully!';
+    EXEC sp_api_toast @text=@Message, @class=N'btn-success';
+    
+END TRY
+BEGIN CATCH
+    SET @Message = CONCAT(N'Error processing file: ', ERROR_MESSAGE());
+    EXEC sp_api_toast @text=@Message, @class=N'btn-danger';
+END CATCH
+
+-- Cleanup
+IF OBJECT_ID('tempdb..#ExcelData') IS NOT NULL 
+    DROP TABLE #ExcelData;
+      ]]>
+    </complete-example>
+  </pattern>
+
+  <!-- BATCH PROCESSING SELECTED RECORDS -->
+  <pattern name="batch-process-selected">
+    <description>Process multiple selected records from list view</description>
+    <use-case>Bulk operations, mass updates, batch processing</use-case>
+    <complete-example>
+      <![CDATA[
+-- Action Script: Batch Update Selected Records
+-- Purpose: Update status for all selected records
+
+-- STEP 1: Declare variables
+DECLARE @ConfirmButton NVARCHAR(MAX);
+DECLARE @CancelButton NVARCHAR(MAX);
+DECLARE @Message NVARCHAR(MAX);
+DECLARE @Title NVARCHAR(MAX);
+DECLARE @RecordCount INT;
+DECLARE @ProcessedCount INT;
+
+-- STEP 2: State sync
+EXEC sp_api_modal_get_value @name=N'@ConfirmButton', @value=@ConfirmButton OUT;
+EXEC sp_api_modal_get_value @name=N'@CancelButton', @value=@CancelButton OUT;
+
+-- STEP 3: Validation
+-- Check if records are selected
+IF @ids IS NULL OR LEN(TRIM(@ids)) = 0
+BEGIN
+    SET @Message = N'Please select at least one record';
+    EXEC sp_api_toast @text=@Message, @class=N'btn-warning';
+    RETURN;
+END
+
+-- Count selected records
+SELECT @RecordCount = COUNT(*)
+FROM STRING_SPLIT(@ids, ',')
+WHERE TRIM(value) <> '';
+
+-- STEP 4: Display confirmation
+SET @Title = N'Batch Update Confirmation';
+EXEC sp_api_modal_text @text=@Title, @class=N'h3';
+
+SET @Message = CONCAT(N'You have selected ', @RecordCount, N' record(s). Do you want to proceed?');
+EXEC sp_api_modal_text @text=@Message, @class=N'alert alert-info';
+
+EXEC sp_api_modal_button 
+    @name = N'@ConfirmButton',
+    @value = N'Confirm',
+    @valueout = @ConfirmButton OUT,
+    @class = N'btn-primary',
+    @inline = 1;
+
+EXEC sp_api_modal_button 
+    @name = N'@CancelButton',
+    @value = N'Cancel',
+    @valueout = @CancelButton OUT,
+    @class = N'btn-secondary',
+    @inline = 1;
+
+-- Pause point
+IF @ConfirmButton IS NULL AND @CancelButton IS NULL RETURN;
+
+-- Handle cancel
+IF @CancelButton IS NOT NULL
+BEGIN
+    EXEC sp_api_modal_clear;
+    RETURN;
+END
+
+-- STEP 5: Process records
+IF @ConfirmButton IS NOT NULL
+BEGIN
+    BEGIN TRY
+        -- Create temp table with selected IDs
+        IF OBJECT_ID('tempdb..#SelectedIds') IS NOT NULL 
+            DROP TABLE #SelectedIds;
+        
+        CREATE TABLE #SelectedIds (RecordId INT);
+        
+        INSERT INTO #SelectedIds (RecordId)
+        SELECT TRY_CAST(TRIM(value) AS INT)
+        FROM STRING_SPLIT(@ids, ',')
+        WHERE TRIM(value) <> '';
+        
+        -- Perform batch update
+        UPDATE t
+        SET Status = N'Processed',
+            ProcessedDate = GETDATE(),
+            ProcessedBy = @user_name
+        FROM YourTable t
+        INNER JOIN #SelectedIds s ON t.id = s.RecordId;
+        
+        SET @ProcessedCount = @@ROWCOUNT;
+        
+        -- Success message
+        SET @Message = CONCAT(N'Successfully processed ', @ProcessedCount, N' record(s)');
+        EXEC sp_api_toast @text=@Message, @class=N'btn-success';
+        EXEC sp_api_modal_clear;
+        
+        -- Cleanup
+        IF OBJECT_ID('tempdb..#SelectedIds') IS NOT NULL 
+            DROP TABLE #SelectedIds;
+        
+    END TRY
+    BEGIN CATCH
+        SET @Message = CONCAT(N'Error processing records: ', ERROR_MESSAGE());
+        EXEC sp_api_toast @text=@Message, @class=N'btn-danger';
+        EXEC sp_api_modal_value @name=N'@ConfirmButton', @value=NULL;
+        RETURN;
+    END CATCH
+END
+      ]]>
+    </complete-example>
+  </pattern>
+
+  <!-- CROSS-DATABASE DATA ACCESS -->
+  <pattern name="cross-database-access">
+    <description>Access data from source database using dbo.main_db()</description>
+    <use-case>Querying source database, creating synonyms, cross-database operations</use-case>
+    <complete-example>
+      <![CDATA[
+-- Action Script: Cross-Database Data Access
+-- Purpose: Query source database and create synonym if needed
+
+-- STEP 1: Declare variables
+DECLARE @SourceDB NVARCHAR(128);
+DECLARE @SQL NVARCHAR(MAX);
+DECLARE @ObjectExists BIT;
+DECLARE @TableExists BIT;
+DECLARE @RecordCount INT;
+DECLARE @Message NVARCHAR(MAX);
+DECLARE @CreateButton NVARCHAR(MAX);
+DECLARE @Title NVARCHAR(MAX);
+
+-- STEP 2: State sync
+EXEC sp_api_modal_get_value @name=N'@CreateButton', @value=@CreateButton OUT;
+
+-- STEP 3: Get source database name
+SET @SourceDB = dbo.main_db();
+
+-- STEP 4: Check if object exists in project database
+IF EXISTS (
+    SELECT 1 FROM sys.objects 
+    WHERE name = 'Customers' 
+    AND type IN ('U', 'SN', 'V')
+)
+    SET @ObjectExists = 1;
+ELSE
+    SET @ObjectExists = 0;
+
+-- STEP 5: Check if table exists in source database
+BEGIN TRY
+    SET @SQL = CONCAT(
+        N'SELECT @Exists = CASE WHEN EXISTS (
+            SELECT 1 FROM [', @SourceDB, N'].sys.objects 
+            WHERE name = ''Customers'' AND type = ''U''
+        ) THEN 1 ELSE 0 END'
+    );
+    
+    EXEC sp_executesql @SQL, N'@Exists BIT OUTPUT', @Exists = @TableExists OUTPUT;
+END TRY
+BEGIN CATCH
+    SET @TableExists = 0;
+END CATCH
+
+-- STEP 6: Display status
+SET @Title = N'Cross-Database Access Status';
+EXEC sp_api_modal_text @text=@Title, @class=N'h3';
+
+SET @Message = CONCAT(N'Source Database: ', @SourceDB);
+EXEC sp_api_modal_text @text=@Message, @class=N'text-muted';
+
+EXEC sp_api_modal_text @text=N'';
+
+IF @ObjectExists = 1
+BEGIN
+    SET @Message = N'✓ Object "Customers" exists in project database';
+    EXEC sp_api_modal_text @text=@Message, @class=N'alert alert-success';
+END
+ELSE
+BEGIN
+    SET @Message = N'✗ Object "Customers" does NOT exist in project database';
+    EXEC sp_api_modal_text @text=@Message, @class=N'alert alert-warning';
+END
+
+IF @TableExists = 1
+BEGIN
+    SET @Message = N'✓ Table "Customers" found in source database';
+    EXEC sp_api_modal_text @text=@Message, @class=N'alert alert-success';
+END
+ELSE
+BEGIN
+    SET @Message = N'✗ Table "Customers" NOT found in source database';
+    EXEC sp_api_modal_text @text=@Message, @class=N'alert alert-danger';
+END
+
+-- STEP 7: Action buttons
+IF @ObjectExists = 0 AND @TableExists = 1
+BEGIN
+    EXEC sp_api_modal_text @text=N'';
+    
+    EXEC sp_api_modal_button 
+        @name = N'@CreateButton',
+        @value = N'Create Synonym',
+        @valueout = @CreateButton OUT,
+        @class = N'btn-primary';
+    
+    IF @CreateButton IS NULL RETURN;
+    
+    -- Create synonym
+    BEGIN TRY
+        SET @SQL = CONCAT(
+            N'CREATE SYNONYM Customers FOR [', 
+            @SourceDB, 
+            N'].[dbo].[Customers]'
+        );
+        
+        EXEC(@SQL);
+        
+        SET @Message = N'✓ Synonym created successfully!';
+        EXEC sp_api_toast @text=@Message, @class=N'btn-success';
+        EXEC sp_api_modal_clear;
+        
+    END TRY
+    BEGIN CATCH
+        SET @Message = CONCAT(N'Error creating synonym: ', ERROR_MESSAGE());
+        EXEC sp_api_toast @text=@Message, @class=N'btn-danger';
+        EXEC sp_api_modal_value @name=N'@CreateButton', @value=NULL;
+        RETURN;
+    END CATCH
+END
+ELSE IF @ObjectExists = 1
+BEGIN
+    -- Query the data
+    SET @SQL = CONCAT(
+        N'SELECT @Count = COUNT(*) FROM [', @SourceDB, N'].[dbo].[Customers]'
+    );
+    
+    EXEC sp_executesql @SQL, N'@Count INT OUTPUT', @Count = @RecordCount OUTPUT;
+    
+    EXEC sp_api_modal_text @text=N'';
+    
+    SET @Message = CONCAT(N'Total Customer Records: ', @RecordCount);
+    EXEC sp_api_modal_text @text=@Message, @class=N'alert alert-info';
+END
+      ]]>
+    </complete-example>
+  </pattern>
+
+  <!-- EMAIL NOTIFICATION -->
+  <pattern name="send-email-notification">
+    <description>Send email with dynamic content</description>
+    <use-case>Notifications, reports via email, alerts</use-case>
+    <complete-example>
+      <![CDATA[
+-- Action Script: Send Email Notification
+-- Purpose: Send formatted email with report data
+
+-- STEP 1: Declare variables
+DECLARE @SendButton NVARCHAR(MAX);
+DECLARE @EmailAddress NVARCHAR(MAX);
+DECLARE @Message NVARCHAR(MAX);
+DECLARE @Subject NVARCHAR(MAX);
+DECLARE @HtmlBody NVARCHAR(MAX);
+DECLARE @Title NVARCHAR(MAX);
+
+-- STEP 2: State sync
+EXEC sp_api_modal_get_value @name=N'@SendButton', @value=@SendButton OUT;
+EXEC sp_api_modal_get_value @name=N'@EmailAddress', @value=@EmailAddress OUT;
+
+-- STEP 3: Display form
+SET @Title = N'Send Report via Email';
+EXEC sp_api_modal_text @text=@Title, @class=N'h3';
+
+EXEC sp_api_modal_input 
+    @name = N'@EmailAddress',
+    @value = @EmailAddress OUT,
+    @placeholder = N'recipient@example.com',
+    @focus = 1;
+
+EXEC sp_api_modal_button 
+    @name = N'@SendButton',
+    @value = N'Send Email',
+    @valueout = @SendButton OUT,
+    @class = N'btn-primary';
+
+IF @SendButton IS NULL RETURN;
+
+-- STEP 4: Validate and send
+IF @SendButton IS NOT NULL
+BEGIN
+    -- Validate email
+    IF @EmailAddress IS NULL OR @EmailAddress NOT LIKE '%_@_%._%'
+    BEGIN
+        SET @Message = N'Please enter a valid email address';
+        EXEC sp_api_toast @text=@Message, @class=N'btn-warning';
+        EXEC sp_api_modal_value @name=N'@SendButton', @value=NULL;
+        RETURN;
+    END
+    
+    -- Prepare email content
+    SET @Subject = CONCAT(N'Report for ', @user_name, N' - ', FORMAT(GETDATE(), 'yyyy-MM-dd'));
+    
+    SET @HtmlBody = N'
+        <html>
+        <body>
+            <h2>Daily Report</h2>
+            <p>Generated by: ' + @user_name + N'</p>
+            <p>Date: ' + FORMAT(GETDATE(), 'yyyy-MM-dd HH:mm') + N'</p>
+            <p>This is an automated report from TSQL.APP.</p>
+        </body>
+        </html>
+    ';
+    
+    -- Send email
+    BEGIN TRY
+        EXEC sp_api_email 
+            @to = @EmailAddress,
+            @subject = @Subject,
+            @html = @HtmlBody;
+        
+        SET @Message = CONCAT(N'Email sent successfully to ', @EmailAddress);
+        EXEC sp_api_toast @text=@Message, @class=N'btn-success';
+        EXEC sp_api_modal_clear;
+        
+    END TRY
+    BEGIN CATCH
+        SET @Message = CONCAT(N'Error sending email: ', ERROR_MESSAGE());
+        EXEC sp_api_toast @text=@Message, @class=N'btn-danger';
+        EXEC sp_api_modal_value @name=N'@SendButton', @value=NULL;
+        RETURN;
+    END CATCH
+END
+      ]]>
+    </complete-example>
+  </pattern>
+
+  <!-- BACKGROUND TASK SCHEDULING -->
+  <pattern name="schedule-background-task">
+    <description>Schedule SQL task for background execution</description>
+    <use-case>Delayed operations, scheduled jobs, async processing</use-case>
+    <complete-example>
+      <![CDATA[
+-- Action Script: Schedule Background Task
+-- Purpose: Schedule a task to run after delay
+
+-- STEP 1: Declare variables
+DECLARE @ScheduleButton NVARCHAR(MAX);
+DECLARE @DelaySeconds INT;
+DECLARE @TaskSQL NVARCHAR(MAX);
+DECLARE @TaskId INT;
+DECLARE @Message NVARCHAR(MAX);
+DECLARE @Title NVARCHAR(MAX);
+
+-- STEP 2: State sync
+EXEC sp_api_modal_get_value @name=N'@ScheduleButton', @value=@ScheduleButton OUT;
+
+-- STEP 3: Display interface
+SET @Title = N'Schedule Background Task';
+EXEC sp_api_modal_text @text=@Title, @class=N'h3';
+
+SET @Message = N'This will schedule a task to update statistics in 60 seconds.';
+EXEC sp_api_modal_text @text=@Message, @class=N'text-muted';
+
+EXEC sp_api_modal_button 
+    @name = N'@ScheduleButton',
+    @value = N'Schedule Task',
+    @valueout = @ScheduleButton OUT,
+    @class = N'btn-primary';
+
+IF @ScheduleButton IS NULL RETURN;
+
+-- STEP 4: Schedule task
+IF @ScheduleButton IS NOT NULL
+BEGIN
+    -- Prepare task SQL
+    SET @TaskSQL = N'
+        UPDATE Statistics 
+        SET LastRun = GETDATE(), 
+            UpdatedBy = ''' + @user_name + N'''
+        WHERE StatType = ''Daily'';
+    ';
+    
+    SET @DelaySeconds = 60;
+    
+    -- Schedule the task
+    BEGIN TRY
+        EXEC sp_api_add_sql_task 
+            @sql = @TaskSQL,
+            @seconds = @DelaySeconds,
+            @description = N'Update daily statistics',
+            @task_id = @TaskId OUT;
+        
+        SET @Message = CONCAT(N'Task scheduled (ID: ', @TaskId, N'). Will execute in ', @DelaySeconds, N' seconds.');
+        EXEC sp_api_toast @text=@Message, @class=N'btn-success';
+        EXEC sp_api_modal_clear;
+        
+    END TRY
+    BEGIN CATCH
+        SET @Message = CONCAT(N'Error scheduling task: ', ERROR_MESSAGE());
+        EXEC sp_api_toast @text=@Message, @class=N'btn-danger';
+        EXEC sp_api_modal_value @name=N'@ScheduleButton', @value=NULL;
+        RETURN;
+    END CATCH
+END
+      ]]>
+    </complete-example>
+  </pattern>
+
+</tsqlapp-common-patterns>

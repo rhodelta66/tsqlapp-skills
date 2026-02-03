@@ -1,0 +1,545 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  TSQL.APP Complete Reference - INDEX AND SUMMARY
+  Version: 2.1
+  
+  This document provides an overview and index to all parts.
+  Updated to include Part 5: CSV Data Source Guide
+-->
+<tsqlapp-complete-reference-index version="2.1">
+
+  <document-overview>
+    <description>
+      This is a complete, comprehensive reference for AI systems generating TSQL.APP code.
+      All rules, practices, procedures, and patterns are documented across 5 parts.
+      
+      CRITICAL: Every rule must be followed. Compliance is mandatory.
+    </description>
+    
+    <scope>
+      - All mandated practices (11 critical rules)
+      - Core framework procedures with examples
+      - Complete working patterns for common scenarios
+      - AI processing instructions and validation criteria
+      - CSV verification and procedure discovery methods
+    </scope>
+    
+    <usage>
+      AI systems should:
+      1. Load and understand all 5 parts before generating code
+      2. Verify procedures against CSV files or database schema
+      3. Follow the code generation workflow
+      4. Validate generated code against all criteria
+      5. Never invent procedures or bypass mandated practices
+    </usage>
+  </document-overview>
+
+  <!-- PART 1: MANDATED PRACTICES -->
+  <part number="1" name="Mandated Practices">
+    <file>tsqlapp_part1_mandates.xml</file>
+    <summary>11 critical rules that MUST be followed without exception</summary>
+    
+    <rules>
+      <rule id="1">ALWAYS Use sys.objects for Object Existence</rule>
+      <rule id="2">ALL Variables MUST Be Declared at Script Start</rule>
+      <rule id="3">NEVER Pass Calculations Directly to Stored Procedures</rule>
+      <rule id="4">ONLY Use Documented Stored Procedures</rule>
+      <rule id="5">Use dbo.main_db() for Source Database References</rule>
+      <rule id="6">State Synchronization Pattern (Reactive Execution Model)</rule>
+      <rule id="7">Reset Button State After Validation Errors</rule>
+      <rule id="8">Never Redeclare TSQL.APP Context Variables</rule>
+      <rule id="9">Define Temporary Tables Only Once</rule>
+      <rule id="10">Always Use Unicode (NVARCHAR, not VARCHAR)</rule>
+      <rule id="11">Dedicated Output Variables for Each Control</rule>
+    </rules>
+    
+    <importance>
+      These practices are MANDATORY. Violations cause script failures or unpredictable behavior.
+      Review this part before generating any TSQL.APP code.
+    </importance>
+  </part>
+
+  <!-- PART 2: CORE PROCEDURES -->
+  <part number="2" name="Core Framework Procedures">
+    <file>tsqlapp_part2_procedures.xml</file>
+    <summary>Essential procedures with parameters and usage examples</summary>
+    
+    <categories>
+      <category name="Modal UI Components">
+        - sp_api_modal_text
+        - sp_api_modal_input
+        - sp_api_modal_button
+        - sp_api_modal_table
+        - sp_api_modal_get_value
+        - sp_api_modal_value
+        - sp_api_modal_clear
+        - sp_api_toast
+        - sp_api_modal_restart
+        - Additional components (select, date, datetime, switch, html)
+      </category>
+      
+      <category name="Navigation">
+        - sp_api_goto
+        - sp_api_go2
+      </category>
+      
+      <category name="Data Operations">
+        - sp_api_excel
+        - sp_api_excel_read
+        - sp_api_modal_file_multi
+      </category>
+      
+      <category name="Communication">
+        - sp_api_email
+      </category>
+      
+      <category name="Task Management">
+        - sp_api_add_sql_task
+      </category>
+      
+      <category name="Utilities">
+        - sp_api_card_actions_execute
+        - sp_api_foreach_id
+      </category>
+    </categories>
+    
+    <procedure-discovery>
+      For complete procedure lists:
+      - Query database using tsql-schema tool
+      - Check tsql.app_procs-common.csv
+      - Check tsql.app_procs-all.csv
+      - Use sp_help 'procedure_name' in SQL Server
+      - Follow Part 5 CSV verification workflow
+    </procedure-discovery>
+  </part>
+
+  <!-- PART 3: COMMON PATTERNS -->
+  <part number="3" name="Common Coding Patterns">
+    <file>tsqlapp_part3_patterns.xml</file>
+    <summary>Complete, working examples for typical scenarios</summary>
+    
+    <patterns>
+      <pattern name="basic-modal-form">
+        Simple user input form with validation
+      </pattern>
+      
+      <pattern name="data-display-table">
+        Display formatted data with grouping and export
+      </pattern>
+      
+      <pattern name="multi-step-form">
+        Multi-step wizard with state preservation
+      </pattern>
+      
+      <pattern name="file-upload-excel">
+        Upload and process Excel files
+      </pattern>
+      
+      <pattern name="batch-process-selected">
+        Process multiple selected records from list view
+      </pattern>
+      
+      <pattern name="cross-database-access">
+        Access data from source database using dbo.main_db()
+      </pattern>
+      
+      <pattern name="send-email-notification">
+        Send email with dynamic content
+      </pattern>
+      
+      <pattern name="schedule-background-task">
+        Schedule SQL task for background execution
+      </pattern>
+    </patterns>
+    
+    <usage>
+      Each pattern is a complete, working example that follows all mandated practices.
+      Use these as templates and adapt to specific requirements.
+    </usage>
+  </part>
+
+  <!-- PART 4: AI INSTRUCTIONS -->
+  <part number="4" name="AI Processing Instructions">
+    <file>tsqlapp_part4_ai_instructions.xml</file>
+    <summary>Specific workflow and validation instructions for AI systems</summary>
+    
+    <contents>
+      <item>Pre-generation checklist</item>
+      <item>Code generation workflow (5 phases)</item>
+      <item>Uncertainty handling protocol</item>
+      <item>Knowledge boundaries</item>
+      <item>Error detection and correction</item>
+      <item>Response templates</item>
+      <item>Code review criteria</item>
+      <item>Self-validation questions</item>
+    </contents>
+    
+    <key-principles>
+      - Verify procedures before using them
+      - Never invent procedure names
+      - State uncertainty explicitly
+      - Follow the generation workflow
+      - Validate all generated code
+      - 100% compliance is required
+    </key-principles>
+  </part>
+
+  <!-- PART 5: CSV DATA SOURCE GUIDE (NEW) -->
+  <part number="5" name="CSV Data Source Guide" new="true">
+    <file>tsqlapp_part5_csv_guide.xml</file>
+    <summary>Comprehensive guide for querying CSV procedure catalogs</summary>
+    <critical-for>Procedure verification and discovery</critical-for>
+    
+    <contents>
+      <item>CSV file structure and columns</item>
+      <item>Practical query examples for procedure lookup</item>
+      <item>Step-by-step verification workflow</item>
+      <item>Common lookup patterns</item>
+      <item>AI workflow integration</item>
+      <item>Real-world verification examples</item>
+      <item>Troubleshooting CSV-related issues</item>
+      <item>Best practices for CSV usage</item>
+    </contents>
+    
+    <why-this-matters>
+      Part 5 is the BRIDGE between documentation and code generation.
+      It transforms the abstract rule "verify procedures exist" into
+      concrete, actionable steps with examples.
+      
+      Without Part 5: AI might invent procedures or guess parameters
+      With Part 5: AI has systematic method to verify every procedure
+    </why-this-matters>
+    
+    <integration-points>
+      <point>Enhances Part 1, Rule #4 (ONLY Use Documented Procedures)</point>
+      <point>Provides implementation details for Part 2 procedure discovery</point>
+      <point>Integrates into Part 4's verification phase</point>
+      <point>Prevents the #1 most common error: invented procedures</point>
+    </integration-points>
+    
+    <key-csv-files>
+      <file name="tsql.app_procs-common.csv">
+        ~50-100 most frequently used procedures for quick reference
+      </file>
+      <file name="tsql.app_procs-all.csv">
+        Complete catalog with 1519 rows covering all procedures and parameters
+        Columns: SchemaName, ProcedureName, ParameterName, ParameterType, 
+                 ParameterSize, IsOutput, IsRequired, DefaultValue
+      </file>
+    </key-csv-files>
+  </part>
+
+  <!-- QUICK REFERENCE -->
+  <quick-reference>
+    
+    <most-common-mistakes>
+      <mistake priority="1">Using invented procedures like sp_api_modal_title</mistake>
+      <mistake priority="2">Passing calculations directly: @text = CONCAT(...)</mistake>
+      <mistake priority="3">Not resetting button state after validation errors</mistake>
+      <mistake priority="4">Declaring variables late in the script</mistake>
+      <mistake priority="5">Reusing same variable for multiple OUT parameters</mistake>
+      <mistake priority="6">Not synchronizing state before drawing UI</mistake>
+      <mistake priority="7">Using VARCHAR instead of NVARCHAR</mistake>
+      <mistake priority="8">Creating temp tables in different branches</mistake>
+      <mistake priority="9">Hardcoding database names instead of using dbo.main_db()</mistake>
+      <mistake priority="10">Checking sys.tables instead of sys.objects</mistake>
+      <mistake priority="11">Not verifying procedures exist in CSV before use</mistake>
+    </most-common-mistakes>
+    
+    <script-template>
+      <![CDATA[
+-- TSQL.APP Action Script Template
+
+-- STEP 1: DECLARE ALL VARIABLES
+-- UI Control Variables
+DECLARE @Input NVARCHAR(MAX);
+DECLARE @Button NVARCHAR(MAX);
+
+-- Business Logic Variables
+DECLARE @Message NVARCHAR(MAX);
+
+-- STEP 2: STATE SYNCHRONIZATION
+EXEC sp_api_modal_get_value @name=N'@Input', @value=@Input OUT;
+EXEC sp_api_modal_get_value @name=N'@Button', @value=@Button OUT;
+
+-- STEP 3: DRAW UI
+EXEC sp_api_modal_text @text=N'Title', @class=N'h3';
+EXEC sp_api_modal_input @name=N'@Input', @value=@Input OUT;
+EXEC sp_api_modal_button @name=N'@Button', @value=N'Submit', @valueout=@Button OUT;
+
+-- STEP 4: PAUSE POINT
+IF @Button IS NULL RETURN;
+
+-- STEP 5: HANDLE ACTION
+IF @Button IS NOT NULL
+BEGIN
+    -- Validate
+    IF LEN(TRIM(ISNULL(@Input, N''))) < 2
+    BEGIN
+        SET @Message = N'Validation failed';
+        EXEC sp_api_toast @text=@Message, @class=N'btn-warning';
+        EXEC sp_api_modal_value @name=N'@Button', @value=NULL;
+        RETURN;
+    END
+    
+    -- Process
+    SET @Message = N'Success!';
+    EXEC sp_api_toast @text=@Message, @class=N'btn-success';
+    EXEC sp_api_modal_clear;
+END
+      ]]>
+    </script-template>
+    
+    <procedure-verification-quick-steps>
+      <step number="1">Identify procedure name needed</step>
+      <step number="2">Query CSV: Does procedure exist?</step>
+      <step number="3">If NO: Find alternative, inform user</step>
+      <step number="4">If YES: Extract all parameters from CSV</step>
+      <step number="5">Identify required vs optional parameters</step>
+      <step number="6">Note OUTPUT parameters</step>
+      <step number="7">Generate code with exact parameter names</step>
+      <step number="8">Validate: All parameters match CSV</step>
+    </procedure-verification-quick-steps>
+    
+  </quick-reference>
+
+  <!-- VERIFICATION CHECKLIST -->
+  <final-verification-checklist>
+    <before-delivery>
+      <check>✓ All variables declared at top</check>
+      <check>✓ No calculations in EXEC parameters</check>
+      <check>✓ All procedures verified to exist (CSV or database)</check>
+      <check>✓ All parameters match CSV documentation</check>
+      <check>✓ No invented procedures or parameters</check>
+      <check>✓ State sync before UI drawing</check>
+      <check>✓ Button reset after validation errors</check>
+      <check>✓ Unicode compliance (NVARCHAR, N prefix)</check>
+      <check>✓ Each control has dedicated OUT variable</check>
+      <check>✓ Temp tables defined once</check>
+      <check>✓ dbo.main_db() used for cross-database</check>
+      <check>✓ sys.objects used for existence checks</check>
+      <check>✓ Context variables not redeclared</check>
+    </before-delivery>
+  </final-verification-checklist>
+
+  <!-- ENHANCED WORKFLOW WITH CSV INTEGRATION -->
+  <enhanced-generation-workflow>
+    <title>Complete Code Generation Workflow (with CSV verification)</title>
+    
+    <phase number="1" name="Analysis">
+      <actions>
+        <action>Analyze user requirements</action>
+        <action>Identify UI components needed</action>
+        <action>List all procedures that will be required</action>
+        <action>Determine data sources and operations</action>
+      </actions>
+    </phase>
+    
+    <phase number="2" name="CSV Verification" critical="true">
+      <actions>
+        <action>For EACH procedure in the list:</action>
+        <substep>Query CSV for procedure existence</substep>
+        <substep>If not found: Search for alternatives, present to user</substep>
+        <substep>If found: Extract complete parameter signature</substep>
+        <substep>Document required parameters</substep>
+        <substep>Document optional parameters with defaults</substep>
+        <substep>Identify OUTPUT parameters</substep>
+      </actions>
+      <validation>
+        STOP if any procedure not found without acceptable alternative
+      </validation>
+    </phase>
+    
+    <phase number="3" name="Structure Planning">
+      <actions>
+        <action>List all required variables (UI + business logic)</action>
+        <action>Plan state synchronization calls</action>
+        <action>Design UI component order</action>
+        <action>Identify pause points (flow control)</action>
+        <action>Plan validation and error handling</action>
+      </actions>
+    </phase>
+    
+    <phase number="4" name="Code Generation">
+      <actions>
+        <action>Generate variable declarations (all at top)</action>
+        <action>Generate state synchronization calls</action>
+        <action>Generate UI drawing code with verified procedures</action>
+        <action>Generate pause point logic</action>
+        <action>Generate business logic with validation</action>
+        <action>Generate success/cleanup code</action>
+      </actions>
+      <inline-validation>
+        As each EXEC is written, verify parameter names match CSV
+      </inline-validation>
+    </phase>
+    
+    <phase number="5" name="Post-Generation Review">
+      <actions>
+        <action>Verify all mandated practices followed</action>
+        <action>Cross-check all procedures against CSV</action>
+        <action>Verify all parameters match CSV</action>
+        <action>Confirm no invented procedures or parameters</action>
+        <action>Validate OUTPUT parameter handling</action>
+        <action>Check Unicode compliance</action>
+        <action>Verify error handling</action>
+      </actions>
+    </phase>
+  </enhanced-generation-workflow>
+
+  <!-- DOCUMENT VERSIONS -->
+  <document-history>
+    <version number="2.1" date="2025">
+      <changes>
+        - Added Part 5: CSV Data Source Guide
+        - Enhanced verification checklist with CSV validation
+        - Updated workflow to include CSV verification phase
+        - Added CSV-specific troubleshooting
+        - Expanded quick reference with procedure verification steps
+        - Added integration points for CSV guide
+        - Updated common mistakes to include CSV verification
+      </changes>
+    </version>
+    
+    <version number="2.0" date="2025">
+      <changes>
+        - Split into 4 separate documents for clarity
+        - Added comprehensive AI processing instructions
+        - Expanded pattern library with 8 complete examples
+        - Added error detection and correction guidance
+        - Included self-validation questions
+        - Added response templates for common situations
+      </changes>
+    </version>
+  </document-history>
+
+  <!-- SUPPORT AND RESOURCES -->
+  <resources>
+    <primary-resources>
+      <resource type="CSV Files" priority="1">
+        <file>tsql.app_procs-common.csv</file>
+        <file>tsql.app_procs-all.csv</file>
+        <description>Authoritative source for all procedure signatures</description>
+        <usage>MUST be queried before using any procedure</usage>
+      </resource>
+      
+      <resource type="Documentation" priority="2">
+        <file>Part 1: Mandated Practices</file>
+        <file>Part 2: Core Procedures</file>
+        <file>Part 3: Common Patterns</file>
+        <file>Part 4: AI Instructions</file>
+        <file>Part 5: CSV Data Source Guide</file>
+        <description>Complete reference for all framework aspects</description>
+      </resource>
+    </primary-resources>
+    
+    <database-schema>
+      Use tsql-schema tool to query procedures and parameters directly from the database
+    </database-schema>
+    
+    <training-documents>
+      - 02.TSQL.APP Mandated Practices.md
+      - 03. Essential TSQL.APP Training.md
+      - 04. TSQL.APP Metadata Management and Navigation Architecture.md
+      - 98. TSQL.APP Function Reference.md
+    </training-documents>
+  </resources>
+
+  <!-- USAGE GUIDELINES -->
+  <usage-guidelines-for-ai>
+    <guideline number="1" priority="critical">
+      <title>CSV Verification is Mandatory</title>
+      <description>
+        Before generating ANY code that uses a procedure, you MUST:
+        1. Query the CSV to verify procedure exists
+        2. Extract complete parameter list from CSV
+        3. Verify parameter names match exactly
+        4. Confirm required vs optional parameters
+        5. Identify OUTPUT parameters
+      </description>
+      <consequence-of-violation>
+        Generated code will fail at runtime with "procedure not found" 
+        or "invalid parameter" errors
+      </consequence-of-violation>
+    </guideline>
+    
+    <guideline number="2" priority="critical">
+      <title>Never Invent Procedures</title>
+      <description>
+        If a procedure name sounds plausible but is not in the CSV:
+        1. It does NOT exist
+        2. Search CSV for alternatives
+        3. Present alternatives to user
+        4. Explain how to achieve goal with documented procedures
+      </description>
+      <common-inventions>
+        sp_api_modal_title, sp_api_modal_info, sp_api_modal_warning,
+        sp_api_modal_header, sp_api_modal_br, sp_api_modal_error
+        (None of these exist - use sp_api_modal_text instead)
+      </common-inventions>
+    </guideline>
+    
+    <guideline number="3" priority="high">
+      <title>State Uncertainty Explicitly</title>
+      <description>
+        If uncertain about any procedure, parameter, or feature:
+        1. State: "I need to verify this in the documentation"
+        2. Query CSV or documentation
+        3. Only respond after verification
+        4. Never guess or assume
+      </description>
+    </guideline>
+    
+    <guideline number="4" priority="high">
+      <title>Follow All Mandated Practices</title>
+      <description>
+        Every generated script must comply with all 11 mandated practices.
+        Partial compliance is failure.
+        Review checklist before delivery.
+      </description>
+    </guideline>
+    
+    <guideline number="5" priority="medium">
+      <title>Use Patterns as Templates</title>
+      <description>
+        Part 3 contains proven, working patterns.
+        Use these as starting points and adapt to specific needs
+        rather than creating from scratch.
+      </description>
+    </guideline>
+  </usage-guidelines-for-ai>
+
+  <!-- ROADMAP -->
+  <future-enhancements>
+    <planned>
+      <enhancement>Quick Reference Cheat Sheet (single page)</enhancement>
+      <enhancement>Error Message Catalog with solutions</enhancement>
+      <enhancement>Interactive procedure finder</enhancement>
+      <enhancement>Visual workflow diagrams</enhancement>
+      <enhancement>Video walkthrough of code generation</enhancement>
+    </planned>
+  </future-enhancements>
+
+  <!-- FINAL INSTRUCTION -->
+  <critical-instruction>
+    <for-ai-systems>
+      You are generating code for a production framework where errors cost time and money.
+      
+      Your responsibility:
+      1. Verify EVERY procedure against CSV before use
+      2. Follow ALL 11 mandated practices without exception
+      3. State uncertainty explicitly rather than guessing
+      4. Generate complete, working, compliant code
+      5. Validate your own output against all criteria
+      
+      The goal is 100% first-time-right code generation.
+      
+      If you cannot verify a procedure: STOP and ask for clarification.
+      If you're uncertain: STOP and verify in documentation.
+      If a practice is unclear: STOP and review Part 1.
+      
+      When in doubt, it's better to ask than to generate non-compliant code.
+    </for-ai-systems>
+  </critical-instruction>
+
+</tsqlapp-complete-reference-index>
